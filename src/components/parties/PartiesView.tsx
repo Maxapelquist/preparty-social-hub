@@ -1,58 +1,102 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, MapPin, Clock, Users, Star, Navigation, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Search, Filter, MapPin, Clock, Users, Plus, Map, Star, MessageCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { PartyMap } from "@/components/map/PartyMap";
+
+interface Party {
+  id: string;
+  title: string;
+  description: string;
+  host_id: string;
+  location_name: string;
+  location_lat: number;
+  location_lng: number;
+  start_time: string;
+  end_time: string;
+  current_attendees: number;
+  max_attendees: number;
+  vibe: string;
+  profiles?: {
+    display_name: string;
+  };
+}
 
 export function PartiesView() {
-  const nearbyParties = [
-    {
-      id: 1,
-      title: "Förfest Södermalm",
-      hostGroup: "Söder Squad",
-      location: "Södermalm, 200m",
-      time: "19:00 - 22:00",
-      attendees: 12,
-      maxAttendees: 20,
-      description: "Chill förfest innan vi drar vidare till klubben!",
-      vibe: "Chill",
-      isJoined: false
-    },
-    {
-      id: 2,
-      title: "KTH Pre-Game",
-      hostGroup: "Tech Crew",
-      location: "Östermalm, 800m",
-      time: "20:00 - 23:00",
-      attendees: 8,
-      maxAttendees: 15,
-      description: "Teknikstudenter som värmer upp för natten!",
-      vibe: "Energetic",
-      isJoined: true
-    },
-    {
-      id: 3,
-      title: "Rooftop Vibes",
-      hostGroup: "Sky High",
-      location: "Norrmalm, 1.2km",
-      time: "18:30 - 21:30",
-      attendees: 15,
-      maxAttendees: 25,
-      description: "Takvåning med utsikt över Stockholm 🌆",
-      vibe: "Luxury",
-      isJoined: false
-    }
-  ];
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [parties, setParties] = useState<Party[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showMap, setShowMap] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
 
-  const getVibeColor = (vibe: string) => {
-    switch (vibe) {
-      case "Chill": return "gradient-accent";
-      case "Energetic": return "gradient-primary";
-      case "Luxury": return "gradient-secondary";
-      default: return "gradient-primary";
+  useEffect(() => {
+    fetchParties();
+    getUserLocation();
+  }, []);
+
+  const fetchParties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('parties')
+        .select(`
+          *,
+          profiles:host_id (display_name)
+        `)
+        .eq('is_active', true)
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+      setParties(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ladda fester",
+        description: error.message
+      });
+    } finally {
+      setLoading(false);
     }
   };
+
+  const getUserLocation = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('location_lat, location_lng')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data?.location_lat && data?.location_lng) {
+      setUserLocation({
+        lat: data.location_lat,
+        lng: data.location_lng
+      });
+    }
+  };
+
+  const getVibeColor = (vibe: string) => {
+    switch (vibe?.toLowerCase()) {
+      case 'energetic': return 'gradient-primary';
+      case 'chill': return 'gradient-secondary';
+      case 'crazy': return 'gradient-accent';
+      default: return 'gradient-primary';
+    }
+  };
+
+  const filteredParties = parties.filter(party =>
+    party.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    party.location_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    party.vibe.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
@@ -69,139 +113,173 @@ export function PartiesView() {
           </Button>
         </div>
 
-        {/* Search & Filter */}
-        <div className="flex space-x-3">
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input 
+        {/* Search and Filter */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Input
               placeholder="Sök fester..."
-              className="pl-10 glass border-border/50"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 glass"
             />
           </div>
-          <Button variant="outline" size="icon" className="glass">
-            <Filter size={18} />
-          </Button>
-        </div>
-
-        {/* Map View Toggle */}
-        <Card className="p-4 glass card-shadow">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 gradient-accent rounded-lg">
-                <MapPin size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="font-semibold">Kartvy</p>
-                <p className="text-sm text-muted-foreground">Se fester på karta</p>
-              </div>
-            </div>
-            <Button variant="outline" className="glass">
-              <Navigation size={16} className="mr-2" />
-              Öppna
+          
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" className="glass">
+              <Filter size={16} className="mr-2" />
+              Filter
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`glass ${showMap ? 'gradient-primary text-white' : ''}`}
+              onClick={() => setShowMap(!showMap)}
+            >
+              <Map size={16} className="mr-2" />
+              {showMap ? 'Lista' : 'Karta'}
             </Button>
           </div>
-        </Card>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="p-3 glass text-center">
-            <p className="text-lg font-bold gradient-primary bg-clip-text text-transparent">
-              {nearbyParties.length}
-            </p>
-            <p className="text-xs text-muted-foreground">Aktiva fester</p>
-          </Card>
-          <Card className="p-3 glass text-center">
-            <p className="text-lg font-bold gradient-secondary bg-clip-text text-transparent">
-              1.5km
-            </p>
-            <p className="text-xs text-muted-foreground">Genomsnitt</p>
-          </Card>
-          <Card className="p-3 glass text-center">
-            <p className="text-lg font-bold gradient-accent bg-clip-text text-transparent">
-              35
-            </p>
-            <p className="text-xs text-muted-foreground">Deltagare</p>
-          </Card>
         </div>
 
-        {/* Party List */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center">
-            <Star size={20} className="mr-2 text-primary" />
-            Fester i Närheten
-          </h2>
+        {/* Map or Stats */}
+        {showMap ? (
+          <PartyMap parties={filteredParties} userLocation={userLocation} />
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="p-3 glass card-shadow text-center">
+              <p className="text-lg font-bold text-primary">{parties.length}</p>
+              <p className="text-xs text-muted-foreground">Aktiva Fester</p>
+            </Card>
+            <Card className="p-3 glass card-shadow text-center">
+              <p className="text-lg font-bold text-secondary">
+                {parties.reduce((sum, party) => sum + party.current_attendees, 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Deltagare</p>
+            </Card>
+            <Card className="p-3 glass card-shadow text-center">
+              <p className="text-lg font-bold text-accent">
+                {userLocation ? '0.5' : '-'} km
+              </p>
+              <p className="text-xs text-muted-foreground">Genomsnitt</p>
+            </Card>
+          </div>
+        )}
 
-          {nearbyParties.map((party) => (
-            <Card key={party.id} className="p-4 glass card-shadow relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-lg" />
-              
-              <div className="relative space-y-3">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg">{party.title}</h3>
+        {/* Parties List */}
+        {!showMap && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center">
+              <Star size={20} className="mr-2 text-primary" />
+              Fester i Närheten
+            </h2>
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="p-4 glass card-shadow">
+                    <div className="animate-pulse flex space-x-4">
+                      <div className="w-12 h-12 bg-muted rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredParties.length > 0 ? (
+              filteredParties.map((party) => (
+                <Card key={party.id} className="p-4 glass card-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-lg" />
+                  
+                  <div className="relative space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{party.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Värd: {party.profiles?.display_name || 'Okänd'}
+                        </p>
+                      </div>
+                      <Badge className={`${getVibeColor(party.vibe)} text-white`}>
+                        {party.vibe}
+                      </Badge>
+                    </div>
+
+                    {/* Details */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <MapPin size={16} className="text-accent" />
+                        <span>{party.location_name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock size={16} className="text-secondary" />
+                        <span>
+                          {new Date(party.start_time).toLocaleTimeString('sv-SE', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Attendees */}
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <Users size={16} className="text-primary" />
+                        <span className="text-sm">
+                          {party.current_attendees}/{party.max_attendees || '∞'} deltagare
+                        </span>
+                      </div>
+                      <div className="flex-1 bg-muted rounded-full h-2">
+                        <div 
+                          className="gradient-primary h-full rounded-full transition-all duration-300"
+                          style={{ 
+                            width: party.max_attendees 
+                              ? `${(party.current_attendees / party.max_attendees) * 100}%` 
+                              : '50%' 
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {party.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {party.description}
+                      </p>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex space-x-3 pt-2">
+                      <Button className="flex-1 gradient-primary text-white button-shadow">
+                        Skicka Förfrågan
+                      </Button>
+                      <Button variant="outline" size="icon" className="glass">
+                        <Star size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="p-8 glass card-shadow text-center">
+                <div className="space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full gradient-hero opacity-20 flex items-center justify-center">
+                    <Users className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Inga fester hittades</h3>
                     <p className="text-sm text-muted-foreground">
-                      Värd: {party.hostGroup}
+                      {searchTerm ? 'Prova att söka efter något annat' : 'Bli den första att skapa en fest!'}
                     </p>
                   </div>
-                  <Badge className={`${getVibeColor(party.vibe)} text-white`}>
-                    {party.vibe}
-                  </Badge>
                 </div>
-
-                {/* Details */}
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <MapPin size={16} className="text-accent" />
-                    <span>{party.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock size={16} className="text-secondary" />
-                    <span>{party.time}</span>
-                  </div>
-                </div>
-
-                {/* Attendees */}
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Users size={16} className="text-primary" />
-                    <span className="text-sm">
-                      {party.attendees}/{party.maxAttendees} deltagare
-                    </span>
-                  </div>
-                  <div className="flex-1 bg-muted rounded-full h-2">
-                    <div 
-                      className="gradient-primary h-full rounded-full transition-all duration-300"
-                      style={{ width: `${(party.attendees / party.maxAttendees) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Description */}
-                <p className="text-sm text-muted-foreground">
-                  {party.description}
-                </p>
-
-                {/* Actions */}
-                <div className="flex space-x-3 pt-2">
-                  {party.isJoined ? (
-                    <Button className="flex-1 gradient-secondary text-white">
-                      <MessageCircle size={16} className="mr-2" />
-                      Chatta
-                    </Button>
-                  ) : (
-                    <Button className="flex-1 gradient-primary text-white button-shadow">
-                      Skicka Förfrågan
-                    </Button>
-                  )}
-                  <Button variant="outline" size="icon" className="glass">
-                    <Star size={16} />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Create Party CTA */}
         <Card className="p-6 glass card-shadow gradient-hero relative overflow-hidden">

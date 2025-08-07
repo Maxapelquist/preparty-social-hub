@@ -1,10 +1,84 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Edit3, Users, Calendar, MapPin, Star } from "lucide-react";
+import { Settings, Edit3, Users, Calendar, MapPin, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Profile {
+  display_name: string;
+  age: number;
+  bio: string;
+  university: string;
+  interests: string[];
+  location_name: string;
+}
 
 export function ProfileView() {
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, age, bio, university, interests, location_name')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Kunde inte ladda profil",
+          description: error.message
+        });
+      } else {
+        setProfile(data);
+      }
+      setLoading(false);
+    };
+
+    fetchProfile();
+  }, [user, toast]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Utloggad",
+      description: "Du har loggats ut från PreParty"
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 px-4 pt-8">
+        <div className="max-w-md mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-3/4"></div>
+            <div className="h-48 bg-muted rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen pb-20 px-4 pt-8">
+        <div className="max-w-md mx-auto text-center">
+          <p className="text-muted-foreground">Kunde inte ladda profil</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
       <div className="max-w-md mx-auto space-y-6">
@@ -14,9 +88,19 @@ export function ProfileView() {
           <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
             Min Profil
           </h1>
-          <Button variant="outline" size="icon" className="glass">
-            <Settings size={20} />
-          </Button>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="icon" className="glass">
+              <Settings size={20} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="glass"
+              onClick={handleSignOut}
+            >
+              <LogOut size={20} />
+            </Button>
+          </div>
         </div>
 
         {/* Profile Card */}
@@ -28,7 +112,7 @@ export function ProfileView() {
               <Avatar className="w-24 h-24 border-4 border-primary/20">
                 <AvatarImage src="/placeholder-avatar.jpg" />
                 <AvatarFallback className="text-2xl gradient-primary text-white">
-                  A
+                  {profile.display_name?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <Button 
@@ -40,26 +124,36 @@ export function ProfileView() {
             </div>
 
             <div>
-              <h2 className="text-xl font-bold">Anna Andersson</h2>
-              <p className="text-muted-foreground">21 år • KTH Student</p>
+              <h2 className="text-xl font-bold">{profile.display_name}</h2>
+              <p className="text-muted-foreground">
+                {profile.age} år {profile.university && `• ${profile.university}`}
+              </p>
             </div>
 
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Gillar att träffa nya människor och ha kul! Alltid redo för spontana äventyr 🎉
-            </p>
+            {profile.bio && (
+              <p className="text-sm text-muted-foreground max-w-xs">
+                {profile.bio}
+              </p>
+            )}
 
             {/* Interests */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              <Badge variant="secondary" className="gradient-secondary text-white">
-                🎵 Musik
-              </Badge>
-              <Badge variant="secondary" className="gradient-accent text-white">
-                🎮 Gaming
-              </Badge>
-              <Badge variant="secondary" className="gradient-primary text-white">
-                🍕 Mat
-              </Badge>
-            </div>
+            {profile.interests && profile.interests.length > 0 && (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {profile.interests.map((interest, index) => (
+                  <Badge 
+                    key={interest} 
+                    variant="secondary" 
+                    className={`text-white ${
+                      index % 3 === 0 ? 'gradient-primary' : 
+                      index % 3 === 1 ? 'gradient-secondary' : 
+                      'gradient-accent'
+                    }`}
+                  >
+                    {interest}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
 
@@ -96,10 +190,17 @@ export function ProfileView() {
           <Button className="w-full gradient-primary text-white button-shadow h-12">
             Redigera Profil
           </Button>
-          <Button variant="outline" className="w-full glass">
-            <MapPin size={18} className="mr-2" />
-            Uppdatera Plats
-          </Button>
+          {profile.location_name ? (
+            <Button variant="outline" className="w-full glass">
+              <MapPin size={18} className="mr-2" />
+              {profile.location_name}
+            </Button>
+          ) : (
+            <Button variant="outline" className="w-full glass">
+              <MapPin size={18} className="mr-2" />
+              Lägg till Plats
+            </Button>
+          )}
         </div>
       </div>
     </div>
