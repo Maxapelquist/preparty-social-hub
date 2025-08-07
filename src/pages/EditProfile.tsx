@@ -42,7 +42,7 @@ function EditProfile() {
       .from('profiles')
       .select('display_name, age, bio, university, interests')
       .eq('user_id', user!.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       toast({
