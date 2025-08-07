@@ -16,7 +16,7 @@ interface Friend {
   user_id: string;
 }
 
-export function CreateGroup() {
+function CreateGroup() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -232,3 +232,5 @@ export function CreateGroup() {
     </div>
   );
 }
+
+export default CreateGroup;

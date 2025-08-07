@@ -20,7 +20,7 @@ interface Profile {
   bio: string;
 }
 
-export function FindFriends() {
+function FindFriends() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -262,3 +262,5 @@ export function FindFriends() {
     </div>
   );
 }
+
+export default FindFriends;

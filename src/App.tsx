@@ -8,10 +8,10 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
-import { EditProfile } from "./pages/EditProfile";
-import { CreateGroup } from "./pages/CreateGroup";
-import { CreateParty } from "./pages/CreateParty";
-import { FindFriends } from "./pages/FindFriends";
+import EditProfile from "./pages/EditProfile";
+import CreateGroup from "./pages/CreateGroup";
+import CreateParty from "./pages/CreateParty";
+import FindFriends from "./pages/FindFriends";
 
 const queryClient = new QueryClient();
 

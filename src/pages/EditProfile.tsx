@@ -16,7 +16,7 @@ const INTERESTS = [
   "Träning", "Festande", "Naturens", "Djur", "Teknik"
 ];
 
-export function EditProfile() {
+function EditProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -218,3 +218,5 @@ export function EditProfile() {
     </div>
   );
 }
+
+export default EditProfile;

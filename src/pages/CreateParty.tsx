@@ -16,7 +16,7 @@ interface Group {
   name: string;
 }
 
-export function CreateParty() {
+function CreateParty() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -306,3 +306,5 @@ export function CreateParty() {
     </div>
   );
 }
+
+export default CreateParty;
