@@ -16,13 +16,19 @@ const INTERESTS = [
   "Träning", "Festande", "Naturens", "Djur", "Teknik"
 ];
 
+const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+
 function EditProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+
   const [formData, setFormData] = useState({
     display_name: '',
+    username: '',
     age: '',
     bio: '',
     university: '',
@@ -41,7 +47,7 @@ function EditProfile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, age, bio, university, interests')
+        .select('display_name, username, age, bio, university, interests')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -54,6 +60,7 @@ function EditProfile() {
       } else if (data) {
         setFormData({
           display_name: data.display_name || '',
+          username: data.username || '',
           age: data.age?.toString() || '',
           bio: data.bio || '',
           university: data.university || '',
@@ -80,15 +87,59 @@ function EditProfile() {
     }));
   };
 
+  const checkUsernameAvailability = async (username: string) => {
+    const candidate = username.trim().toLowerCase();
+    if (!candidate) {
+      setUsernameError('Ange ett användarnamn');
+      return false;
+    }
+    if (!USERNAME_REGEX.test(candidate)) {
+      setUsernameError('Endast a–z, 0–9, _ och . (3–20 tecken)');
+      return false;
+    }
+    setCheckingUsername(true);
+    setUsernameError(null);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('username', candidate)
+      .maybeSingle();
+    setCheckingUsername(false);
+
+    if (error) {
+      setUsernameError('Kunde inte verifiera just nu.');
+      return true;
+    }
+    if (data && data.user_id !== user?.id) {
+      setUsernameError('Användarnamnet är upptaget');
+      return false;
+    }
+    setUsernameError(null);
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // validera användarnamn innan uppdatering
+    const ok = await checkUsernameAvailability(formData.username);
+    if (!ok) {
+      setLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Ogiltigt användarnamn",
+        description: usernameError || "Kontrollera användarnamnet"
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           display_name: formData.display_name,
+          username: formData.username.trim().toLowerCase(),
           age: formData.age ? parseInt(formData.age) : null,
           bio: formData.bio,
           university: formData.university,
@@ -96,7 +147,13 @@ function EditProfile() {
         })
         .eq('user_id', user!.id);
 
-      if (error) throw error;
+      if (error) {
+        const isUnique = (error as any)?.code === '23505' || (error as any)?.message?.toLowerCase()?.includes('duplicate key');
+        if (isUnique) {
+          throw new Error('Användarnamnet är upptaget. Välj ett annat.');
+        }
+        throw error;
+      }
 
       toast({
         title: "Profil uppdaterad!",
@@ -179,6 +236,26 @@ function EditProfile() {
                   placeholder="Ditt namn"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Användarnamn</label>
+                <Input
+                  value={formData.username}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value.toLowerCase() }))}
+                  onBlur={() => checkUsernameAvailability(formData.username)}
+                  placeholder="t.ex. alex_89"
+                  required
+                />
+                {checkingUsername && (
+                  <p className="text-xs text-muted-foreground mt-1">Kontrollerar tillgänglighet...</p>
+                )}
+                {usernameError && (
+                  <p className="text-xs text-destructive mt-1">{usernameError}</p>
+                )}
+                {!usernameError && formData.username && !checkingUsername && (
+                  <p className="text-xs text-green-600 mt-1">Tillgängligt</p>
+                )}
               </div>
 
               <div>

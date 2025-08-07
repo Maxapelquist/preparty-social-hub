@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Crown, MessageCircle, MapPin, Clock } from "lucide-react";
+import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,22 @@ interface Group {
   created_at: string;
 }
 
+interface RequestRow {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: string;
+  created_at: string;
+}
+
+interface RequestWithProfile extends RequestRow {
+  sender: {
+    user_id: string;
+    display_name: string | null;
+    username: string | null;
+  };
+}
+
 export function GroupsView() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -27,10 +43,14 @@ export function GroupsView() {
   const [suggestions, setSuggestions] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [pendingCount, setPendingCount] = useState(0);
+  const [requests, setRequests] = useState<RequestWithProfile[]>([]);
+
   useEffect(() => {
     if (user) {
       fetchMyGroups();
       fetchSuggestedGroups();
+      fetchPendingRequests();
     }
   }, [user]);
 
@@ -142,14 +162,117 @@ export function GroupsView() {
     }
   };
 
+  const fetchPendingRequests = async () => {
+    if (!user) return;
+    try {
+      const { data: reqs, error } = await supabase
+        .from('friends')
+        .select('id, user_id, friend_id, status, created_at')
+        .eq('friend_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      const rows = (reqs || []) as RequestRow[];
+      setPendingCount(rows.length);
+
+      if (rows.length === 0) {
+        setRequests([]);
+        return;
+      }
+
+      const senderIds = rows.map(r => r.user_id);
+      const { data: profilesData, error: pErr } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, username')
+        .in('user_id', senderIds);
+
+      if (pErr) throw pErr;
+
+      const byUserId = new Map((profilesData || []).map(p => [p.user_id, p]));
+      const combined: RequestWithProfile[] = rows.map(r => ({
+        ...r,
+        sender: {
+          user_id: r.user_id,
+          display_name: byUserId.get(r.user_id)?.display_name ?? null,
+          username: byUserId.get(r.user_id)?.username ?? null,
+        }
+      }));
+
+      setRequests(combined);
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ladda vänförfrågningar",
+        description: err.message
+      });
+    }
+  };
+
+  const acceptRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('friends')
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Vänförfrågan accepterad",
+        description: "Ni är nu vänner!"
+      });
+
+      // uppdatera lokalt
+      setRequests(prev => prev.filter(r => r.id !== requestId));
+      setPendingCount(prev => Math.max(prev - 1, 0));
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte acceptera",
+        description: err.message
+      });
+    }
+  };
+
+  const declineRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('friends')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Vänförfrågan avböjd",
+        description: "Förfrågan har tagits bort."
+      });
+
+      setRequests(prev => prev.filter(r => r.id !== requestId));
+      setPendingCount(prev => Math.max(prev - 1, 0));
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte avböja",
+        description: err.message
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
       <div className="max-w-md mx-auto space-y-6">
         
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent flex items-center">
             Grupper & Vänner
+            {pendingCount > 0 && (
+              <Badge variant="secondary" className="ml-2 gradient-accent text-white">
+                {pendingCount}
+              </Badge>
+            )}
           </h1>
           <Button 
             className="gradient-primary text-white button-shadow"
@@ -179,6 +302,49 @@ export function GroupsView() {
             <span className="text-xs">Skapa Chatt</span>
           </Button>
         </div>
+
+        {/* Friend Requests */}
+        {requests.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Vänförfrågningar</h2>
+            {requests.map((req) => (
+              <Card key={req.id} className="p-4 glass card-shadow">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-12 h-12 border-2 border-accent/20">
+                    <AvatarFallback className="gradient-accent text-white font-bold">
+                      {(req.sender.display_name || req.sender.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="font-semibold">
+                      {req.sender.display_name || 'Okänd'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {req.sender.username ? '@' + req.sender.username : ''}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      className="gradient-primary text-white"
+                      onClick={() => acceptRequest(req.id)}
+                    >
+                      <Check size={16} className="mr-1" />
+                      Acceptera
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="glass"
+                      onClick={() => declineRequest(req.id)}
+                    >
+                      <X size={16} className="mr-1" />
+                      Avböj
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* My Groups */}
         <div className="space-y-4">
@@ -294,7 +460,6 @@ export function GroupsView() {
           )}
         </div>
 
-        {/* Create Group CTA */}
         <Card className="p-6 glass card-shadow gradient-hero relative overflow-hidden">
           <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-lg" />
           <div className="relative text-center text-white">

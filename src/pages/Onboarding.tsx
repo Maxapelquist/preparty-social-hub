@@ -16,6 +16,8 @@ const INTERESTS = [
   'Film', 'Böcker', 'Dans', 'Konst', 'Sport', 'Tech'
 ];
 
+const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+
 export default function Onboarding() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -24,9 +26,12 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   
   const [formData, setFormData] = useState({
     displayName: '',
+    username: '',
     age: '',
     bio: '',
     university: '',
@@ -43,6 +48,38 @@ export default function Onboarding() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
+  };
+
+  const checkUsernameAvailability = async (username: string) => {
+    const candidate = username.trim().toLowerCase();
+    if (!candidate) {
+      setUsernameError('Ange ett användarnamn');
+      return false;
+    }
+    if (!USERNAME_REGEX.test(candidate)) {
+      setUsernameError('Endast a–z, 0–9, _ och . (3–20 tecken)');
+      return false;
+    }
+    setCheckingUsername(true);
+    setUsernameError(null);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('username', candidate)
+      .maybeSingle();
+    setCheckingUsername(false);
+
+    if (error) {
+      // Om api-fel, tillåt fortsättning men visa info
+      setUsernameError('Kunde inte verifiera just nu. Försök igen eller fortsätt.');
+      return true;
+    }
+    if (data && data.user_id !== user?.id) {
+      setUsernameError('Användarnamnet är upptaget');
+      return false;
+    }
+    setUsernameError(null);
+    return true;
   };
 
   const requestLocation = () => {
@@ -82,6 +119,17 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     if (!user) return;
     
+    // Validera användarnamn en sista gång innan submit
+    const ok = await checkUsernameAvailability(formData.username);
+    if (!ok) {
+      toast({
+        variant: "destructive",
+        title: "Ogiltigt användarnamn",
+        description: usernameError || "Kontrollera användarnamnet"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -89,6 +137,7 @@ export default function Onboarding() {
         .upsert({
           user_id: user.id,
           display_name: formData.displayName,
+          username: formData.username.trim().toLowerCase(),
           age: parseInt(formData.age),
           bio: formData.bio,
           university: formData.university,
@@ -98,7 +147,14 @@ export default function Onboarding() {
           location_name: formData.locationName
         });
 
-      if (error) throw error;
+      if (error) {
+        // Hantera unikhetsfel snyggt
+        const isUnique = (error as any)?.code === '23505' || (error as any)?.message?.toLowerCase()?.includes('duplicate key');
+        if (isUnique) {
+          throw new Error('Användarnamnet är upptaget. Välj ett annat.');
+        }
+        throw error;
+      }
 
       toast({
         title: "Profil skapad!",
@@ -150,6 +206,27 @@ export default function Onboarding() {
                 className="glass"
                 placeholder="Ditt namn"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Användarnamn</Label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
+                onBlur={() => checkUsernameAvailability(formData.username)}
+                className="glass"
+                placeholder="t.ex. alex_89"
+              />
+              {checkingUsername && (
+                <p className="text-xs text-muted-foreground">Kontrollerar tillgänglighet...</p>
+              )}
+              {usernameError && (
+                <p className="text-xs text-destructive">{usernameError}</p>
+              )}
+              {!usernameError && formData.username && !checkingUsername && (
+                <p className="text-xs text-green-600">Tillgängligt</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -258,7 +335,7 @@ export default function Onboarding() {
             {step < 3 ? (
               <Button 
                 onClick={nextStep}
-                disabled={step === 1 && !formData.displayName}
+                disabled={step === 1 && (!formData.displayName || !formData.username || !!usernameError)}
                 className="gradient-primary text-white button-shadow"
               >
                 Nästa
@@ -266,7 +343,7 @@ export default function Onboarding() {
             ) : (
               <Button 
                 onClick={handleSubmit}
-                disabled={loading || !formData.displayName}
+                disabled={loading || !formData.displayName || !formData.username || !!usernameError}
                 className="gradient-primary text-white button-shadow"
               >
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

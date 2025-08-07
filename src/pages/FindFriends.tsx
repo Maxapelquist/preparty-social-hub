@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface Profile {
   id: string;
   user_id: string;
   display_name: string;
+  username?: string | null;
   age: number;
   university: string;
   interests: string[];
@@ -68,7 +70,7 @@ function FindFriends() {
         .from('profiles')
         .select('*')
         .neq('user_id', user!.id)
-        .or(`display_name.ilike.%${searchTerm}%,university.ilike.%${searchTerm}%`)
+        .or(`display_name.ilike.%${searchTerm}%,university.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
         .limit(20);
 
       if (error) throw error;
@@ -86,6 +88,7 @@ function FindFriends() {
 
   const sendFriendRequest = async (targetUserId: string, displayName: string) => {
     try {
+      // Skicka förfrågan
       const { error } = await supabase
         .from('friends')
         .insert({
@@ -94,7 +97,13 @@ function FindFriends() {
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (error) {
+        const isDuplicate = (error as any)?.code === '23505' || (error as any)?.message?.toLowerCase()?.includes('duplicate key');
+        if (isDuplicate) {
+          throw new Error('Du har redan skickat en förfrågan.');
+        }
+        throw error;
+      }
 
       setSentRequests(prev => [...prev, targetUserId]);
       
@@ -141,7 +150,7 @@ function FindFriends() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
-                placeholder="Sök efter namn eller universitet..."
+                placeholder="Sök efter namn, universitet eller användarnamn..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -190,6 +199,9 @@ function FindFriends() {
                   <div className="flex-1 space-y-2">
                     <div>
                       <h3 className="font-bold text-lg">{profile.display_name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {profile.username ? '@' + profile.username : ''}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {profile.age && `${profile.age} år`}
                         {profile.age && profile.university && ' • '}
