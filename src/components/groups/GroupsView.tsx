@@ -34,25 +34,29 @@ export function GroupsView() {
 
   const fetchMyGroups = async () => {
     try {
-      const { data, error } = await supabase
+      // First get user's group memberships
+      const { data: memberships, error } = await supabase
         .from('group_members')
-        .select(`
-          group_id,
-          role,
-          groups (
-            id,
-            name,
-            description,
-            admin_id,
-            created_at
-          )
-        `)
+        .select('group_id, role')
         .eq('user_id', user!.id);
 
       if (error) throw error;
 
+      if (!memberships || memberships.length === 0) {
+        setMyGroups([]);
+        return;
+      }
+
+      // Get group details
+      const groupIds = memberships.map(m => m.group_id);
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('groups')
+        .select('id, name, description, admin_id, created_at')
+        .in('id', groupIds);
+
+      if (groupsError) throw groupsError;
+
       // Get member counts for each group
-      const groupIds = data?.map(item => item.group_id) || [];
       const { data: memberCounts, error: countError } = await supabase
         .from('group_members')
         .select('group_id')
@@ -60,20 +64,22 @@ export function GroupsView() {
 
       if (countError) throw countError;
 
-      const groupsWithCounts = data?.map(item => {
-        const memberCount = memberCounts?.filter(m => m.group_id === item.group_id).length || 0;
+      const groupsWithDetails = groupsData?.map(group => {
+        const membership = memberships.find(m => m.group_id === group.id);
+        const memberCount = memberCounts?.filter(m => m.group_id === group.id).length || 0;
+        
         return {
-          id: item.groups?.id || '',
-          name: item.groups?.name || '',
-          description: item.groups?.description,
-          admin_id: item.groups?.admin_id || '',
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          admin_id: group.admin_id,
           member_count: memberCount,
-          is_admin: item.role === 'admin',
-          created_at: item.groups?.created_at || ''
+          is_admin: membership?.role === 'admin',
+          created_at: group.created_at
         };
       }) || [];
 
-      setMyGroups(groupsWithCounts);
+      setMyGroups(groupsWithDetails);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -93,11 +99,16 @@ export function GroupsView() {
 
       const userGroupIds = userGroups?.map(g => g.group_id) || [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('groups')
         .select('id, name, description, admin_id, created_at')
-        .not('id', 'in', `(${userGroupIds.join(',')})`)
         .limit(5);
+
+      if (userGroupIds.length > 0) {
+        query = query.not('id', 'in', `(${userGroupIds.join(',')})`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
