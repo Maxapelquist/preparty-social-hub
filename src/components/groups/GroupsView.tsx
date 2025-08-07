@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +22,7 @@ interface Group {
 export function GroupsView() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [myGroups, setMyGroups] = useState<Group[]>([]);
   const [suggestions, setSuggestions] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +153,7 @@ export function GroupsView() {
           </h1>
           <Button 
             className="gradient-primary text-white button-shadow"
-            onClick={() => window.location.href = '/groups/create'}
+            onClick={() => navigate('/groups/create')}
           >
             <Plus size={20} className="mr-2" />
             Ny Grupp
@@ -163,7 +165,7 @@ export function GroupsView() {
           <Button 
             variant="outline" 
             className="glass h-16 flex-col"
-            onClick={() => window.location.href = '/friends'}
+            onClick={() => navigate('/friends')}
           >
             <Users size={20} className="mb-1" />
             <span className="text-xs">Hitta Vänner</span>
@@ -171,7 +173,7 @@ export function GroupsView() {
           <Button 
             variant="outline" 
             className="glass h-16 flex-col"
-            onClick={() => window.location.href = '/chat'}
+            onClick={() => navigate('/chat')}
           >
             <MessageCircle size={20} className="mb-1" />
             <span className="text-xs">Skapa Chatt</span>
@@ -304,7 +306,7 @@ export function GroupsView() {
             <Button 
               variant="secondary" 
               className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30"
-              onClick={() => window.location.href = '/groups/create'}
+              onClick={() => navigate('/groups/create')}
             >
               Kom Igång
             </Button>

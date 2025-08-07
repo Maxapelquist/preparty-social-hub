@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ interface Party {
 export function PartiesView() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [parties, setParties] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,7 +115,7 @@ export function PartiesView() {
           </h1>
           <Button 
             className="gradient-primary text-white button-shadow"
-            onClick={() => window.location.href = '/parties/create'}
+            onClick={() => navigate('/parties/create')}
           >
             <Plus size={20} className="mr-2" />
             Skapa
@@ -300,7 +302,7 @@ export function PartiesView() {
             <Button 
               variant="secondary" 
               className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30"
-              onClick={() => window.location.href = '/parties/create'}
+              onClick={() => navigate('/parties/create')}
             >
               Kom Igång
             </Button>
