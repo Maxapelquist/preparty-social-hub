@@ -1,12 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Navigation } from "@/components/ui/navigation";
+import { ProfileView } from "@/components/profile/ProfileView";
+import { GroupsView } from "@/components/groups/GroupsView";
+import { PartiesView } from "@/components/parties/PartiesView";
+import { ChatView } from "@/components/chat/ChatView";
+import { GamesView } from "@/components/games/GamesView";
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("profile");
+
+  const renderActiveView = () => {
+    switch (activeTab) {
+      case "profile":
+        return <ProfileView />;
+      case "groups":
+        return <GroupsView />;
+      case "parties":
+        return <PartiesView />;
+      case "chat":
+        return <ChatView />;
+      case "games":
+        return <GamesView />;
+      default:
+        return <ProfileView />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {renderActiveView()}
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };
