@@ -35,6 +35,20 @@ interface RequestWithProfile extends RequestRow {
   };
 }
 
+interface Friend {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: string;
+  created_at: string;
+  profile: {
+    user_id: string;
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  };
+}
+
 export function GroupsView() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -45,12 +59,16 @@ export function GroupsView() {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [requests, setRequests] = useState<RequestWithProfile[]>([]);
+  
+  const [myFriends, setMyFriends] = useState<Friend[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchMyGroups();
       fetchSuggestedGroups();
       fetchPendingRequests();
+      fetchMyFriends();
     }
   }, [user]);
 
@@ -209,6 +227,80 @@ export function GroupsView() {
     }
   };
 
+  const fetchMyFriends = async () => {
+    if (!user) return;
+    
+    try {
+      setFriendsLoading(true);
+      
+      // Fetch accepted friendships where current user is either user_id or friend_id
+      const { data: friendships, error } = await supabase
+        .from('friends')
+        .select('id, user_id, friend_id, status, created_at')
+        .eq('status', 'accepted')
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+
+      if (error) throw error;
+
+      if (!friendships || friendships.length === 0) {
+        setMyFriends([]);
+        return;
+      }
+
+      // Get the friend user IDs (the other person in each friendship)
+      const friendUserIds = friendships.map(f => 
+        f.user_id === user.id ? f.friend_id : f.user_id
+      );
+
+      // Fetch profiles for all friends
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, username, avatar_url')
+        .in('user_id', friendUserIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine friendship data with profile data
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+      
+      const friendsWithProfiles: Friend[] = friendships.map(friendship => {
+        const friendUserId = friendship.user_id === user.id ? friendship.friend_id : friendship.user_id;
+        const profile = profileMap.get(friendUserId);
+        
+        return {
+          ...friendship,
+          profile: {
+            user_id: friendUserId,
+            display_name: profile?.display_name || null,
+            username: profile?.username || null,
+            avatar_url: profile?.avatar_url || null,
+          }
+        };
+      });
+
+      setMyFriends(friendsWithProfiles);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ladda vänner",
+        description: error.message
+      });
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const startDirectChat = (friendUserId: string) => {
+    // For now, navigate to the general chat page
+    // TODO: Implement direct messaging functionality
+    navigate('/chat');
+    
+    toast({
+      title: "Chatt öppnas snart",
+      description: "Direktmeddelanden kommer snart!"
+    });
+  };
+
   const acceptRequest = async (requestId: string) => {
     try {
       const { error } = await supabase
@@ -226,6 +318,9 @@ export function GroupsView() {
       // uppdatera lokalt
       setRequests(prev => prev.filter(r => r.id !== requestId));
       setPendingCount(prev => Math.max(prev - 1, 0));
+      
+      // Refresh friends list to show the newly accepted friend
+      fetchMyFriends();
     } catch (err: any) {
       toast({
         variant: "destructive",
@@ -345,6 +440,79 @@ export function GroupsView() {
             ))}
           </div>
         )}
+
+        {/* My Friends */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center">
+            <MessageCircle size={20} className="mr-2 text-accent" />
+            Mina Vänner
+          </h2>
+
+          {friendsLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <Card key={i} className="p-4 glass card-shadow animate-pulse">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-muted rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-1/3" />
+                      <div className="h-3 bg-muted rounded w-1/2" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : myFriends.length > 0 ? (
+            myFriends.map((friend) => (
+              <Card key={friend.id} className="p-4 glass card-shadow">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-12 h-12 border-2 border-accent/20">
+                    <AvatarImage src={friend.profile.avatar_url || undefined} />
+                    <AvatarFallback className="gradient-accent text-white font-bold">
+                      {(friend.profile.display_name || friend.profile.username || 'V').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold">
+                        {friend.profile.display_name || 'Okänd vän'}
+                      </h3>
+                      <Badge variant="secondary" className="gradient-accent text-white">
+                        Vän
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      {friend.profile.username ? '@' + friend.profile.username : ''}
+                    </div>
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="glass"
+                    onClick={() => startDirectChat(friend.profile.user_id)}
+                  >
+                    <MessageCircle size={16} />
+                  </Button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <Card className="p-6 glass card-shadow text-center">
+              <MessageCircle size={32} className="mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">Du har inga vänner än</p>
+              <Button 
+                variant="outline" 
+                className="mt-3 glass"
+                onClick={() => navigate('/friends')}
+              >
+                Hitta Vänner
+              </Button>
+            </Card>
+          )}
+        </div>
 
         {/* My Groups */}
         <div className="space-y-4">
