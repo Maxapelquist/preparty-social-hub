@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +21,7 @@ interface Profile {
 export function ProfileView() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -189,7 +191,7 @@ export function ProfileView() {
         <div className="space-y-3">
           <Button 
             className="w-full gradient-primary text-white button-shadow h-12"
-            onClick={() => window.location.href = '/profile/edit'}
+            onClick={() => navigate('/profile/edit')}
           >
             Redigera Profil
           </Button>

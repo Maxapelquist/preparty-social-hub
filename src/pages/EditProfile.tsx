@@ -30,34 +30,44 @@ function EditProfile() {
   });
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
+    if (user) {
+      fetchProfile();
     }
-    fetchProfile();
-  }, [user, navigate]);
+  }, [user]);
 
   const fetchProfile = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('display_name, age, bio, university, interests')
-      .eq('user_id', user!.id)
-      .maybeSingle();
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, age, bio, university, interests')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Kunde inte ladda profil",
+          description: error.message
+        });
+      } else if (data) {
+        setFormData({
+          display_name: data.display_name || '',
+          age: data.age?.toString() || '',
+          bio: data.bio || '',
+          university: data.university || '',
+          interests: data.interests || []
+        });
+      }
+    } catch (err) {
       toast({
         variant: "destructive",
-        title: "Kunde inte ladda profil",
-        description: error.message
+        title: "Fel",
+        description: "Kunde inte ladda profil"
       });
-    } else if (data) {
-      setFormData({
-        display_name: data.display_name || '',
-        age: data.age?.toString() || '',
-        bio: data.bio || '',
-        university: data.university || '',
-        interests: data.interests || []
-      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,6 +114,35 @@ function EditProfile() {
       setLoading(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 px-4 pt-8">
+        <div className="max-w-md mx-auto text-center pt-20">
+          <p className="text-muted-foreground">Du måste vara inloggad för att redigera din profil</p>
+          <Button 
+            className="mt-4" 
+            onClick={() => navigate('/auth')}
+          >
+            Logga in
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 px-4 pt-8">
+        <div className="max-w-md mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-3/4"></div>
+            <div className="h-48 bg-muted rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
