@@ -14,7 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      parties: {
+        Row: {
+          created_at: string
+          current_attendees: number | null
+          description: string | null
+          end_time: string | null
+          host_id: string
+          id: string
+          is_active: boolean | null
+          location_lat: number
+          location_lng: number
+          location_name: string
+          max_attendees: number | null
+          start_time: string
+          title: string
+          updated_at: string
+          vibe: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_attendees?: number | null
+          description?: string | null
+          end_time?: string | null
+          host_id: string
+          id?: string
+          is_active?: boolean | null
+          location_lat: number
+          location_lng: number
+          location_name: string
+          max_attendees?: number | null
+          start_time: string
+          title: string
+          updated_at?: string
+          vibe?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_attendees?: number | null
+          description?: string | null
+          end_time?: string | null
+          host_id?: string
+          id?: string
+          is_active?: boolean | null
+          location_lat?: number
+          location_lng?: number
+          location_name?: string
+          max_attendees?: number | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+          vibe?: string | null
+        }
+        Relationships: []
+      }
+      party_attendees: {
+        Row: {
+          created_at: string
+          id: string
+          party_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          party_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          party_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "party_attendees_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          interests: string[] | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          university: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          interests?: string[] | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          university?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          interests?: string[] | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          university?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
