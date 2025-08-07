@@ -111,7 +111,10 @@ export function PartiesView() {
           <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
             Fester Runt Dig
           </h1>
-          <Button className="gradient-primary text-white button-shadow">
+          <Button 
+            className="gradient-primary text-white button-shadow"
+            onClick={() => window.location.href = '/parties/create'}
+          >
             <Plus size={20} className="mr-2" />
             Skapa
           </Button>
@@ -294,7 +297,11 @@ export function PartiesView() {
             <p className="text-sm opacity-80 mb-4">
               Bjud in andra grupper och skapa minnesvärda stunder!
             </p>
-            <Button variant="secondary" className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30">
+            <Button 
+              variant="secondary" 
+              className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30"
+              onClick={() => window.location.href = '/parties/create'}
+            >
               Kom Igång
             </Button>
           </div>

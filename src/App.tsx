@@ -8,6 +8,10 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
+import { EditProfile } from "./pages/EditProfile";
+import { CreateGroup } from "./pages/CreateGroup";
+import { CreateParty } from "./pages/CreateParty";
+import { FindFriends } from "./pages/FindFriends";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +26,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/groups/create" element={<CreateGroup />} />
+            <Route path="/parties/create" element={<CreateParty />} />
+            <Route path="/friends" element={<FindFriends />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

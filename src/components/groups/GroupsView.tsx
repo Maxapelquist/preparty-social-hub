@@ -54,7 +54,10 @@ export function GroupsView() {
           <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
             Grupper & Vänner
           </h1>
-          <Button className="gradient-primary text-white button-shadow">
+          <Button 
+            className="gradient-primary text-white button-shadow"
+            onClick={() => window.location.href = '/groups/create'}
+          >
             <Plus size={20} className="mr-2" />
             Ny Grupp
           </Button>
@@ -62,11 +65,19 @@ export function GroupsView() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="glass h-16 flex-col">
+          <Button 
+            variant="outline" 
+            className="glass h-16 flex-col"
+            onClick={() => window.location.href = '/friends'}
+          >
             <Users size={20} className="mb-1" />
             <span className="text-xs">Hitta Vänner</span>
           </Button>
-          <Button variant="outline" className="glass h-16 flex-col">
+          <Button 
+            variant="outline" 
+            className="glass h-16 flex-col"
+            onClick={() => window.location.href = '/chat'}
+          >
             <MessageCircle size={20} className="mb-1" />
             <span className="text-xs">Skapa Chatt</span>
           </Button>
@@ -176,7 +187,11 @@ export function GroupsView() {
             <p className="text-sm opacity-80 mb-4">
               Samla dina vänner och börja hitta häftiga fester tillsammans!
             </p>
-            <Button variant="secondary" className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30">
+            <Button 
+              variant="secondary" 
+              className="bg-white/20 backdrop-blur text-white border-white/20 hover:bg-white/30"
+              onClick={() => window.location.href = '/groups/create'}
+            >
               Kom Igång
             </Button>
           </div>

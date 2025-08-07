@@ -187,7 +187,10 @@ export function ProfileView() {
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <Button className="w-full gradient-primary text-white button-shadow h-12">
+          <Button 
+            className="w-full gradient-primary text-white button-shadow h-12"
+            onClick={() => window.location.href = '/profile/edit'}
+          >
             Redigera Profil
           </Button>
           {profile.location_name ? (
