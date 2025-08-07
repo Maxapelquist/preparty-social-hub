@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, Users, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Friend {
   id: string;
@@ -37,15 +38,44 @@ function CreateGroup() {
   }, [user, navigate]);
 
   const fetchFriends = async () => {
-    // For now, we'll use mock data since friends system isn't fully implemented
-    // In a real app, this would fetch actual friends from the database
-    const mockFriends = [
-      { id: '1', display_name: 'Anna Svensson', user_id: 'user1' },
-      { id: '2', display_name: 'Erik Johansson', user_id: 'user2' },
-      { id: '3', display_name: 'Maria Lindqvist', user_id: 'user3' },
-      { id: '4', display_name: 'Johan Andersson', user_id: 'user4' }
-    ];
-    setFriends(mockFriends);
+    try {
+      // Get accepted friends and their profile info
+      const { data: friendsData, error } = await supabase
+        .from('friends')
+        .select('friend_id')
+        .eq('user_id', user!.id)
+        .eq('status', 'accepted');
+
+      if (error) throw error;
+
+      if (!friendsData || friendsData.length === 0) {
+        setFriends([]);
+        return;
+      }
+
+      // Get profiles for all friend IDs
+      const friendIds = friendsData.map(f => f.friend_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', friendIds);
+
+      if (profilesError) throw profilesError;
+
+      const friendsList = profilesData?.map(profile => ({
+        id: profile.user_id,
+        display_name: profile.display_name || 'Okänd användare',
+        user_id: profile.user_id
+      })) || [];
+
+      setFriends(friendsList);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ladda vänner",
+        description: error.message
+      });
+    }
   };
 
   const toggleFriend = (friendId: string) => {
@@ -72,8 +102,43 @@ function CreateGroup() {
     setLoading(true);
 
     try {
-      // For now, just simulate group creation
-      // In a real app, this would save to the groups table
+      // Create the group
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .insert({
+          name: formData.name,
+          description: formData.description,
+          admin_id: user!.id
+        })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Add selected friends as members
+      if (formData.selectedFriends.length > 0) {
+        const memberInserts = formData.selectedFriends.map(friendId => ({
+          group_id: group.id,
+          user_id: friendId,
+          role: 'member'
+        }));
+
+        const { error: membersError } = await supabase
+          .from('group_members')
+          .insert(memberInserts);
+
+        if (membersError) throw membersError;
+      }
+
+      // Add the admin as a member
+      await supabase
+        .from('group_members')
+        .insert({
+          group_id: group.id,
+          user_id: user!.id,
+          role: 'admin'
+        });
+
       toast({
         title: "Grupp skapad!",
         description: `${formData.name} har skapats framgångsrikt.`

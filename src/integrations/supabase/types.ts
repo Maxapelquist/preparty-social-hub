@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      groups: {
+        Row: {
+          admin_id: string
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_private: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id: string
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parties: {
         Row: {
           created_at: string

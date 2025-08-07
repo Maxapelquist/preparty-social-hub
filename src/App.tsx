@@ -26,10 +26,15 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/profile" element={<Index />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/groups" element={<Index />} />
             <Route path="/groups/create" element={<CreateGroup />} />
+            <Route path="/parties" element={<Index />} />
             <Route path="/parties/create" element={<CreateParty />} />
             <Route path="/friends" element={<FindFriends />} />
+            <Route path="/chat" element={<Index />} />
+            <Route path="/map" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

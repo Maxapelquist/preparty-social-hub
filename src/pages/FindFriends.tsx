@@ -86,8 +86,16 @@ function FindFriends() {
 
   const sendFriendRequest = async (targetUserId: string, displayName: string) => {
     try {
-      // In a real app, this would create a friend request
-      // For now, we'll just simulate it
+      const { error } = await supabase
+        .from('friends')
+        .insert({
+          user_id: user!.id,
+          friend_id: targetUserId,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
       setSentRequests(prev => [...prev, targetUserId]);
       
       toast({
