@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -17,8 +18,16 @@ export default function Auth() {
     displayName: ''
   });
 
-  const { signIn, signUp } = useAuth();
+  const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +51,12 @@ export default function Auth() {
         toast({
           title: "Konto skapat!",
           description: "Kontrollera din e-post för verifieringslänken."
+        });
+      } else {
+        // Successfully logged in, redirect will happen via useEffect
+        toast({
+          title: "Inloggning lyckades!",
+          description: "Välkommen tillbaka!"
         });
       }
     } catch (error: any) {

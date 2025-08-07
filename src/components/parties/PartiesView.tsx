@@ -25,7 +25,7 @@ interface Party {
   vibe: string;
   profiles?: {
     display_name: string;
-  };
+  } | null;
 }
 
 export function PartiesView() {
@@ -54,7 +54,11 @@ export function PartiesView() {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setParties(data || []);
+      const partiesData = (data || []).map(party => ({
+        ...party,
+        profiles: Array.isArray(party.profiles) ? party.profiles[0] : party.profiles
+      }));
+      setParties(partiesData as Party[]);
     } catch (error: any) {
       toast({
         variant: "destructive",
