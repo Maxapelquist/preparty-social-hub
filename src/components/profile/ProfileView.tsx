@@ -110,7 +110,7 @@ export function ProfileView() {
           <div className="relative flex flex-col items-center text-center space-y-4">
             <div className="relative">
               <Avatar className="w-24 h-24 border-4 border-primary/20">
-                <AvatarImage src="/placeholder-avatar.jpg" />
+                <AvatarImage src="" />
                 <AvatarFallback className="text-2xl gradient-primary text-white">
                   {profile.display_name?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
