@@ -90,31 +90,6 @@ export function ProfileView() {
           </Card>
         </div>
 
-        {/* Recent Activity */}
-        <Card className="p-6 glass card-shadow">
-          <h3 className="font-semibold mb-4 flex items-center">
-            <Star size={18} className="mr-2 text-primary" />
-            Senaste Aktivitet
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-muted/20 rounded-lg">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Skapade grupp "KTH Crew"</p>
-                <p className="text-xs text-muted-foreground">2 timmar sedan</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 bg-muted/20 rounded-lg">
-              <div className="w-2 h-2 bg-secondary rounded-full" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Deltog i fest på Södermalm</p>
-                <p className="text-xs text-muted-foreground">1 dag sedan</p>
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* Action Buttons */}
         <div className="space-y-3">
