@@ -45,7 +45,7 @@ export function PartyAttendeesViewer({ partyId, isOpen, onClose }: PartyAttendee
         .from('party_attendees')
         .select(`
           user_id,
-          profiles!party_attendees_user_id_fkey (
+          profiles!fk_party_attendees_user_id (
             display_name,
             avatar_url,
             age,

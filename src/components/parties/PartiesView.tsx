@@ -331,6 +331,13 @@ export function PartiesView() {
             </Button>
           </div>
         </Card>
+        
+        {/* Party Attendees Viewer */}
+        <PartyAttendeesViewer
+          partyId={selectedPartyId || ''}
+          isOpen={!!selectedPartyId}
+          onClose={() => setSelectedPartyId(null)}
+        />
       </div>
     </div>
   );

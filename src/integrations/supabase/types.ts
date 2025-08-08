@@ -341,6 +341,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_party_attendees_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "party_attendees_party_id_fkey"
             columns: ["party_id"]
             isOneToOne: false
