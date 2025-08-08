@@ -8,12 +8,14 @@ import { Settings, Edit3, Users, Calendar, MapPin, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Onboarding from "@/pages/Onboarding";
 
 interface Profile {
   display_name: string;
   age: number;
   bio: string;
   university: string;
+  occupation: string;
   interests: string[];
   location_name: string;
 }
@@ -31,16 +33,14 @@ export function ProfileView() {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, age, bio, university, interests, location_name')
+        .select('display_name, age, bio, university, occupation, interests, location_name')
         .eq('user_id', user.id)
         .single();
 
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Kunde inte ladda profil",
-          description: error.message
-        });
+        console.log('Profile error:', error);
+        // User doesn't have a profile yet, will show onboarding
+        setProfile(null);
       } else {
         setProfile(data);
       }
@@ -71,14 +71,12 @@ export function ProfileView() {
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen pb-20 px-4 pt-8">
-        <div className="max-w-md mx-auto text-center">
-          <p className="text-muted-foreground">Kunde inte ladda profil</p>
-        </div>
-      </div>
-    );
+  // Check if profile is complete
+  const isProfileComplete = profile && profile.display_name && profile.age && profile.occupation;
+
+  // Show onboarding if profile is incomplete
+  if (!isProfileComplete) {
+    return <Onboarding canSkip={true} />;
   }
 
   return (

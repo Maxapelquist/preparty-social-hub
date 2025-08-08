@@ -26,17 +26,17 @@ export default function Landing() {
           .eq('user_id', user.id)
           .single();
         
-        // If user doesn't have a complete profile, redirect to onboarding
+        // If user doesn't have a complete profile, redirect to profile page (which will show onboarding)
         if (error || !data?.display_name || !data?.age || !data?.occupation) {
-          navigate('/onboarding');
+          navigate('/profile');
         } else {
           // User has completed onboarding, redirect to dashboard
           navigate('/dashboard');
         }
       } catch (error) {
         console.error('Error checking profile:', error);
-        // On error, assume they need onboarding
-        navigate('/onboarding');
+        // On error, assume they need onboarding and go to profile
+        navigate('/profile');
       }
     };
 

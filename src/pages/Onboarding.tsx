@@ -18,7 +18,7 @@ const INTERESTS = [
 
 const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
 
-export default function Onboarding() {
+export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -238,6 +238,14 @@ export default function Onboarding() {
     }
   };
 
+  const handleSkip = () => {
+    toast({
+      title: "Onboarding hoppades över",
+      description: "Du kan slutföra din profil senare"
+    });
+    navigate('/dashboard');
+  };
+
   const nextStep = () => {
     if (step < 3) setStep(step + 1);
   };
@@ -251,13 +259,25 @@ export default function Onboarding() {
       <div className="absolute inset-0 gradient-hero opacity-20" />
       
       <Card className="w-full max-w-lg p-8 glass card-shadow relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
-            Välkommen!
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Låt oss skapa din profil (steg {step} av 3)
-          </p>
+        <div className="flex justify-between items-start mb-6">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+              Välkommen!
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Låt oss skapa din profil (steg {step} av 3)
+            </p>
+          </div>
+          {canSkip && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleSkip}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Hoppa över
+            </Button>
+          )}
         </div>
 
         {step === 1 && (
