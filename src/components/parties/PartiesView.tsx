@@ -95,7 +95,7 @@ export function PartiesView() {
         lng: data.location_lng
       });
       setLocationEnabled(true);
-      setShowMap(true); // Auto-show map when location is available
+      setShowMap(false); // Default to list view
     }
   };
 
