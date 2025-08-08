@@ -20,7 +20,7 @@ const Index = () => {
     if (loading) return;
     
     if (!user) {
-      navigate('/auth');
+      navigate('/');
       return;
     }
 
@@ -28,11 +28,12 @@ const Index = () => {
     const checkProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name')
+        .select('display_name, age, occupation')
         .eq('user_id', user.id)
         .single();
       
-      if (error || !data?.display_name) {
+      // If user doesn't have a complete profile (missing age or occupation), redirect to onboarding
+      if (error || !data?.display_name || !data?.age || !data?.occupation) {
         navigate('/onboarding');
       } else {
         setHasProfile(true);

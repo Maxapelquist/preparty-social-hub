@@ -35,6 +35,7 @@ export default function Onboarding() {
     age: '',
     bio: '',
     university: '',
+    occupation: '',
     interests: [] as string[],
     locationLat: null as number | null,
     locationLng: null as number | null,
@@ -173,6 +174,8 @@ export default function Onboarding() {
         p_age: parseInt(formData.age) || null,
         p_bio: formData.bio || null,
         p_university: formData.university || null,
+        p_occupation: formData.occupation || null,
+        p_phone_number: null, // Phone number handled during signup
         p_interests: formData.interests.length > 0 ? formData.interests : null,
         p_location_lat: formData.locationLat,
         p_location_lng: formData.locationLng,
@@ -201,7 +204,7 @@ export default function Onboarding() {
         description: "Välkommen till PreParty!"
       });
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast({
@@ -290,6 +293,17 @@ export default function Onboarding() {
                 onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                 className="glass"
                 placeholder="KTH, SU, etc."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="occupation">Yrke/Sysselsättning</Label>
+              <Input
+                id="occupation"
+                value={formData.occupation}
+                onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                className="glass"
+                placeholder="Student, Utvecklare, etc."
               />
             </div>
 
@@ -392,7 +406,7 @@ export default function Onboarding() {
               <Button 
                 onClick={nextStep}
                 disabled={
-                  (step === 1 && (!formData.displayName || !formData.username || !!usernameError)) ||
+                  (step === 1 && (!formData.displayName || !formData.username || !formData.age || !formData.occupation || !!usernameError)) ||
                   (step === 2 && formData.interests.length < 3)
                 }
                 className="gradient-primary text-white button-shadow"
@@ -402,7 +416,7 @@ export default function Onboarding() {
             ) : (
               <Button 
                 onClick={handleSubmit}
-                disabled={loading || !formData.displayName || !formData.username || !!usernameError || formData.interests.length < 3}
+                disabled={loading || !formData.displayName || !formData.username || !formData.age || !formData.occupation || !!usernameError || formData.interests.length < 3}
                 className="gradient-primary text-white button-shadow"
               >
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
