@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface Message {
   content: string;
   created_at: string;
   read_at: string | null;
+  isOptimistic?: boolean; // For optimistic updates
 }
 
 interface Conversation {
@@ -43,6 +44,40 @@ export function DirectChat() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const markMessageAsRead = useCallback(async (messageId: string) => {
+    try {
+      await supabase
+        .from('direct_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  }, []);
+
+  const handleRealtimeMessage = useCallback((payload: any) => {
+    const newMsg = payload.new as Message;
+    
+    setMessages(prev => {
+      // Remove any optimistic message with same content if this is the real one
+      const filteredPrev = prev.filter(msg => 
+        !(msg.isOptimistic && msg.content === newMsg.content && msg.sender_id === newMsg.sender_id)
+      );
+      
+      // Check if message already exists to prevent duplicates
+      const exists = filteredPrev.some(msg => msg.id === newMsg.id);
+      if (exists) return prev;
+      
+      return [...filteredPrev, newMsg];
+    });
+    
+    // Mark message as read if it's not from current user
+    if (newMsg.sender_id !== user?.id) {
+      markMessageAsRead(newMsg.id);
+    }
+  }, [user?.id, markMessageAsRead]);
 
   useEffect(() => {
     if (conversationId && user) {
@@ -51,7 +86,7 @@ export function DirectChat() {
       
       // Set up realtime subscription for new messages
       const messagesSubscription = supabase
-        .channel('direct-messages')
+        .channel(`direct-messages-${conversationId}`)
         .on(
           'postgres_changes',
           {
@@ -60,23 +95,16 @@ export function DirectChat() {
             table: 'direct_messages',
             filter: `conversation_id=eq.${conversationId}`
           },
-          (payload) => {
-            const newMsg = payload.new as Message;
-            setMessages(prev => [...prev, newMsg]);
-            
-            // Mark message as read if it's not from current user
-            if (newMsg.sender_id !== user.id) {
-              markMessageAsRead(newMsg.id);
-            }
-          }
+          handleRealtimeMessage
         )
         .subscribe();
+
 
       return () => {
         supabase.removeChannel(messagesSubscription);
       };
     }
-  }, [conversationId, user]);
+  }, [conversationId, user, handleRealtimeMessage, retryCount]);
 
   useEffect(() => {
     scrollToBottom();
@@ -166,36 +194,59 @@ export function DirectChat() {
     }
   };
 
-  const markMessageAsRead = async (messageId: string) => {
-    try {
-      await supabase
-        .from('direct_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', messageId);
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !conversationId || !user || sending) return;
 
+    const messageContent = newMessage.trim();
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+
     try {
       setSending(true);
 
-      const { error } = await supabase
+      // Optimistic update - add message immediately to UI
+      const optimisticMessage: Message = {
+        id: tempId,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: messageContent,
+        created_at: new Date().toISOString(),
+        read_at: null,
+        isOptimistic: true
+      };
+
+      setMessages(prev => [...prev, optimisticMessage]);
+      setNewMessage("");
+
+      // Send message to database
+      const { data, error } = await supabase
         .from('direct_messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
-          content: newMessage.trim()
-        });
+          content: messageContent
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNewMessage("");
+      // Replace optimistic message with real one
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === tempId ? { ...data, isOptimistic: false } : msg
+        )
+      );
+
     } catch (error: any) {
       console.error('Error sending message:', error);
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      
+      // Restore message in input
+      setNewMessage(messageContent);
+      
       toast({
         variant: "destructive",
         title: "Kunde inte skicka meddelande",
