@@ -18,6 +18,8 @@ interface Profile {
   occupation: string;
   interests: string[];
   location_name: string;
+  avatar_url: string | null;
+  profile_pictures: string[] | null;
 }
 
 export function ProfileView() {
@@ -33,7 +35,7 @@ export function ProfileView() {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, age, bio, university, occupation, interests, location_name')
+        .select('display_name, age, bio, university, occupation, interests, location_name, avatar_url, profile_pictures')
         .eq('user_id', user.id)
         .single();
 
@@ -110,7 +112,7 @@ export function ProfileView() {
           <div className="relative flex flex-col items-center text-center space-y-4">
             <div className="relative">
               <Avatar className="w-24 h-24 border-4 border-primary/20">
-                <AvatarImage src="" />
+                <AvatarImage src={profile.avatar_url || (profile.profile_pictures?.[0] || undefined)} className="object-cover" />
                 <AvatarFallback className="text-2xl gradient-primary text-white">
                   {profile.display_name?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>

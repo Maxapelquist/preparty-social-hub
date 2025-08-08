@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Users, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ interface Friend {
   id: string;
   display_name: string;
   user_id: string;
+  avatar_url: string | null;
 }
 
 function CreateGroup() {
@@ -57,7 +58,7 @@ function CreateGroup() {
       const friendIds = friendsData.map(f => f.friend_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', friendIds);
 
       if (profilesError) throw profilesError;
@@ -65,7 +66,8 @@ function CreateGroup() {
       const friendsList = profilesData?.map(profile => ({
         id: profile.user_id,
         display_name: profile.display_name || 'Okänd användare',
-        user_id: profile.user_id
+        user_id: profile.user_id,
+        avatar_url: profile.avatar_url
       })) || [];
 
       setFriends(friendsList);
@@ -225,6 +227,7 @@ function CreateGroup() {
                   />
                   
                   <Avatar className="w-10 h-10">
+                    <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
                     <AvatarFallback className="gradient-primary text-white">
                       {friend.display_name.charAt(0).toUpperCase()}
                     </AvatarFallback>
@@ -270,6 +273,7 @@ function CreateGroup() {
                   return friend ? (
                     <div key={friendId} className="flex items-center space-x-2 bg-primary/10 rounded-full px-3 py-1">
                       <Avatar className="w-6 h-6">
+                        <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
                         <AvatarFallback className="text-xs gradient-primary text-white">
                           {friend.display_name.charAt(0)}
                         </AvatarFallback>

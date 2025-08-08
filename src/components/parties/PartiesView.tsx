@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Filter, MapPin, Clock, Users, Plus, Map, Star, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,7 @@ interface Party {
   vibe: string;
   profiles?: {
     display_name: string;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -50,7 +51,7 @@ export function PartiesView() {
         .from('parties')
         .select(`
           *,
-          profiles:host_id (display_name)
+          profiles:host_id (display_name, avatar_url)
         `)
         .eq('is_active', true)
         .order('start_time', { ascending: true });
@@ -205,11 +206,19 @@ export function PartiesView() {
                   <div className="relative space-y-3">
                     {/* Header */}
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg">{party.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Värd: {party.profiles?.display_name || 'Okänd'}
-                        </p>
+                      <div className="flex items-center space-x-3 flex-1">
+                        <Avatar className="w-10 h-10 border-2 border-primary/20">
+                          <AvatarImage src={party.profiles?.avatar_url || undefined} className="object-cover" />
+                          <AvatarFallback className="gradient-primary text-white font-bold text-sm">
+                            {(party.profiles?.display_name || 'V').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-bold text-lg">{party.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Värd: {party.profiles?.display_name || 'Okänd'}
+                          </p>
+                        </div>
                       </div>
                       <Badge className={`${getVibeColor(party.vibe)} text-white`}>
                         {party.vibe}

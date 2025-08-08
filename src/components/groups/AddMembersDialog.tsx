@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,7 @@ interface Friend {
   id: string;
   display_name: string;
   user_id: string;
+  avatar_url: string | null;
 }
 
 interface AddMembersDialogProps {
@@ -82,7 +83,7 @@ export function AddMembersDialog({
       // Get profiles for available friends
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', availableFriendIds);
 
       if (profilesError) throw profilesError;
@@ -90,7 +91,8 @@ export function AddMembersDialog({
       const friendsList = profilesData?.map(profile => ({
         id: profile.user_id,
         display_name: profile.display_name || 'Okänd användare',
-        user_id: profile.user_id
+        user_id: profile.user_id,
+        avatar_url: profile.avatar_url
       })) || [];
 
       setFriends(friendsList);
@@ -183,6 +185,7 @@ export function AddMembersDialog({
                     />
                     
                     <Avatar className="w-8 h-8">
+                      <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
                       <AvatarFallback className="gradient-primary text-white text-sm">
                         {friend.display_name.charAt(0).toUpperCase()}
                       </AvatarFallback>
