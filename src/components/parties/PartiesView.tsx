@@ -55,7 +55,7 @@ export function PartiesView() {
         .from('parties')
         .select(`
           *,
-          profiles!parties_host_id_fkey (display_name, avatar_url)
+          profiles!fk_parties_host_id (display_name, avatar_url)
         `)
         .eq('is_active', true)
         .order('start_time', { ascending: true });
