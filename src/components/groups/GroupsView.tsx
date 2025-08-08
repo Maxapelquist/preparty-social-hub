@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X, UserCheck, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +48,7 @@ interface Friend {
     display_name: string | null;
     username: string | null;
     avatar_url: string | null;
+    profile_pictures?: string[];
   };
 }
 
@@ -261,7 +263,7 @@ export function GroupsView() {
       // Fetch profiles for all friends
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, username, avatar_url')
+        .select('user_id, display_name, username, avatar_url, profile_pictures')
         .in('user_id', friendUserIds);
 
       if (profilesError) throw profilesError;
@@ -280,6 +282,7 @@ export function GroupsView() {
             display_name: profile?.display_name || null,
             username: profile?.username || null,
             avatar_url: profile?.avatar_url || null,
+            profile_pictures: profile?.profile_pictures || []
           }
         };
       });
@@ -548,12 +551,13 @@ export function GroupsView() {
             myFriends.map((friend) => (
               <Card key={friend.id} className="p-4 glass card-shadow">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="w-12 h-12 border-2 border-accent/20">
-                    <AvatarImage src={friend.profile.avatar_url || undefined} />
-                    <AvatarFallback className="gradient-accent text-white font-bold">
-                      {(friend.profile.display_name || friend.profile.username || 'V').charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ClickableAvatar
+                    src={friend.profile.avatar_url}
+                    fallback={(friend.profile.display_name || friend.profile.username || 'V').charAt(0).toUpperCase()}
+                    userName={friend.profile.display_name || friend.profile.username || 'Okänd vän'}
+                    profilePictures={friend.profile.profile_pictures || []}
+                    className="w-12 h-12 border-2 border-accent/20"
+                  />
 
                   <div className="flex-1 cursor-pointer" onClick={() => navigate(`/profile/${friend.profile.user_id}`)}>
                     <div className="flex items-center justify-between mb-1">

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Search, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ interface DirectConversation {
     display_name: string | null;
     username: string | null;
     avatar_url: string | null;
+    profile_pictures?: string[];
   };
   last_message?: {
     content: string;
@@ -73,7 +75,7 @@ export function ChatView() {
       // Fetch profiles for other users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, username, avatar_url')
+        .select('user_id, display_name, username, avatar_url, profile_pictures')
         .in('user_id', otherUserIds);
 
       if (profilesError) throw profilesError;
@@ -134,6 +136,7 @@ export function ChatView() {
             display_name: profile?.display_name || null,
             username: profile?.username || null,
             avatar_url: profile?.avatar_url || null,
+            profile_pictures: profile?.profile_pictures || []
           },
           last_message: lastMessage || null,
           unread_count: unreadCount
@@ -259,12 +262,13 @@ export function ChatView() {
               >
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <Avatar className="w-12 h-12 border-2 border-border/20">
-                      <AvatarImage src={conversation.other_user.avatar_url || undefined} />
-                      <AvatarFallback className="gradient-primary text-white font-bold">
-                        {(conversation.other_user.display_name || conversation.other_user.username || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ClickableAvatar
+                      src={conversation.other_user.avatar_url}
+                      fallback={(conversation.other_user.display_name || conversation.other_user.username || 'U').charAt(0).toUpperCase()}
+                      userName={conversation.other_user.display_name || conversation.other_user.username || 'Okänd användare'}
+                      profilePictures={conversation.other_user.profile_pictures || []}
+                      className="w-12 h-12 border-2 border-border/20"
+                    />
                     {conversation.unread_count > 0 && (
                       <Badge className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center p-0 text-xs">
                         {conversation.unread_count}

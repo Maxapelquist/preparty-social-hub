@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { ArrowLeft, Send, Phone, Video, MoreVertical } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ interface Conversation {
     display_name: string | null;
     username: string | null;
     avatar_url: string | null;
+    profile_pictures?: string[];
   };
 }
 
@@ -130,7 +132,7 @@ export function DirectChat() {
       const otherUserId = convData.user_a === user.id ? convData.user_b : convData.user_a;
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, username, avatar_url')
+        .select('user_id, display_name, username, avatar_url, profile_pictures')
         .eq('user_id', otherUserId)
         .single();
 
@@ -328,12 +330,13 @@ export function DirectChat() {
               <ArrowLeft size={20} />
             </Button>
             
-            <Avatar className="w-10 h-10 border-2 border-border/20">
-              <AvatarImage src={conversation.other_user.avatar_url || undefined} />
-              <AvatarFallback className="gradient-primary text-white font-bold">
-                {(conversation.other_user.display_name || conversation.other_user.username || 'U').charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <ClickableAvatar
+              src={conversation.other_user.avatar_url}
+              fallback={(conversation.other_user.display_name || conversation.other_user.username || 'U').charAt(0).toUpperCase()}
+              userName={conversation.other_user.display_name || conversation.other_user.username || 'Okänd användare'}
+              profilePictures={conversation.other_user.profile_pictures || []}
+              className="w-10 h-10 border-2 border-border/20"
+            />
             
             <div>
               <h2 className="font-semibold">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Users, Calendar, MapPin, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +18,7 @@ interface Profile {
   interests: string[];
   location_name: string;
   avatar_url: string;
+  profile_pictures: string[];
 }
 
 export default function FriendProfile() {
@@ -37,7 +39,7 @@ export default function FriendProfile() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('display_name, age, bio, university, interests, location_name, avatar_url')
+          .select('display_name, age, bio, university, interests, location_name, avatar_url, profile_pictures')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -123,12 +125,14 @@ export default function FriendProfile() {
           
           <div className="relative flex flex-col items-center text-center space-y-4">
             <div className="relative">
-              <Avatar className="w-24 h-24 border-4 border-primary/20">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="text-2xl gradient-primary text-white">
-                  {profile.display_name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <ClickableAvatar
+                src={profile.avatar_url}
+                fallback={profile.display_name?.charAt(0).toUpperCase() || 'U'}
+                userName={profile.display_name || 'Okänd användare'}
+                profilePictures={profile.profile_pictures || []}
+                className="w-24 h-24 border-4 border-primary/20"
+                size="lg"
+              />
             </div>
 
             <div>

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Users, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,7 @@ interface Friend {
   display_name: string;
   user_id: string;
   avatar_url: string | null;
+  profile_pictures?: string[];
 }
 
 interface AddMembersDialogProps {
@@ -83,7 +85,7 @@ export function AddMembersDialog({
       // Get profiles for available friends
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, avatar_url, profile_pictures')
         .in('user_id', availableFriendIds);
 
       if (profilesError) throw profilesError;
@@ -92,7 +94,8 @@ export function AddMembersDialog({
         id: profile.user_id,
         display_name: profile.display_name || 'Okänd användare',
         user_id: profile.user_id,
-        avatar_url: profile.avatar_url
+        avatar_url: profile.avatar_url,
+        profile_pictures: profile.profile_pictures || []
       })) || [];
 
       setFriends(friendsList);
@@ -184,12 +187,14 @@ export function AddMembersDialog({
                       onCheckedChange={() => toggleFriend(friend.id)}
                     />
                     
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
-                      <AvatarFallback className="gradient-primary text-white text-sm">
-                        {friend.display_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ClickableAvatar
+                      src={friend.avatar_url}
+                      fallback={friend.display_name.charAt(0).toUpperCase()}
+                      userName={friend.display_name}
+                      profilePictures={friend.profile_pictures || []}
+                      className="w-8 h-8"
+                      size="sm"
+                    />
                     
                     <div className="flex-1">
                       <p className="font-medium text-sm">{friend.display_name}</p>

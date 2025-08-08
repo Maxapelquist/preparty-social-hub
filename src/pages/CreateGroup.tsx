@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { ArrowLeft, Users, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ interface Friend {
   display_name: string;
   user_id: string;
   avatar_url: string | null;
+  profile_pictures?: string[];
 }
 
 function CreateGroup() {
@@ -58,7 +60,7 @@ function CreateGroup() {
       const friendIds = friendsData.map(f => f.friend_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, avatar_url, profile_pictures')
         .in('user_id', friendIds);
 
       if (profilesError) throw profilesError;
@@ -67,7 +69,8 @@ function CreateGroup() {
         id: profile.user_id,
         display_name: profile.display_name || 'Okänd användare',
         user_id: profile.user_id,
-        avatar_url: profile.avatar_url
+        avatar_url: profile.avatar_url,
+        profile_pictures: profile.profile_pictures || []
       })) || [];
 
       setFriends(friendsList);
@@ -226,12 +229,13 @@ function CreateGroup() {
                     onCheckedChange={() => toggleFriend(friend.id)}
                   />
                   
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
-                    <AvatarFallback className="gradient-primary text-white">
-                      {friend.display_name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ClickableAvatar
+                    src={friend.avatar_url}
+                    fallback={friend.display_name.charAt(0).toUpperCase()}
+                    userName={friend.display_name}
+                    profilePictures={friend.profile_pictures || []}
+                    className="w-10 h-10"
+                  />
                   
                   <div className="flex-1">
                     <p className="font-medium">{friend.display_name}</p>
@@ -272,12 +276,14 @@ function CreateGroup() {
                   const friend = friends.find(f => f.id === friendId);
                   return friend ? (
                     <div key={friendId} className="flex items-center space-x-2 bg-primary/10 rounded-full px-3 py-1">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={friend.avatar_url || undefined} className="object-cover" />
-                        <AvatarFallback className="text-xs gradient-primary text-white">
-                          {friend.display_name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <ClickableAvatar
+                        src={friend.avatar_url}
+                        fallback={friend.display_name.charAt(0)}
+                        userName={friend.display_name}
+                        profilePictures={friend.profile_pictures || []}
+                        className="w-6 h-6"
+                        size="sm"
+                      />
                       <span className="text-sm">{friend.display_name}</span>
                     </div>
                   ) : null;

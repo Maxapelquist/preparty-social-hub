@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Search, UserPlus, Users, MessageCircle, Clock, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -214,11 +215,14 @@ function FindFriends() {
             searchResults.map((profile) => (
               <Card key={profile.id} className="p-4 glass card-shadow">
                 <div className="flex items-start space-x-4">
-                  <Avatar className="w-16 h-16 border-2 border-primary/20">
-                    <AvatarFallback className="gradient-primary text-white text-lg font-bold">
-                      {profile.display_name?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ClickableAvatar
+                    src={null}
+                    fallback={profile.display_name?.charAt(0).toUpperCase() || 'U'}
+                    userName={profile.display_name || 'Okänd användare'}
+                    profilePictures={[]}
+                    className="w-16 h-16 border-2 border-primary/20"
+                    size="lg"
+                  />
 
                   <div className="flex-1 space-y-2">
                     <div>

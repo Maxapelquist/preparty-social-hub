@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Settings, Edit3, Users, Calendar, MapPin, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -111,12 +112,14 @@ export function ProfileView() {
           
           <div className="relative flex flex-col items-center text-center space-y-4">
             <div className="relative">
-              <Avatar className="w-24 h-24 border-4 border-primary/20">
-                <AvatarImage src={profile.avatar_url || (profile.profile_pictures?.[0] || undefined)} className="object-cover" />
-                <AvatarFallback className="text-2xl gradient-primary text-white">
-                  {profile.display_name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <ClickableAvatar
+                src={profile.avatar_url || profile.profile_pictures?.[0]}
+                fallback={profile.display_name?.charAt(0).toUpperCase() || 'U'}
+                userName={profile.display_name || 'Okänd användare'}
+                profilePictures={profile.profile_pictures || []}
+                className="w-24 h-24 border-4 border-primary/20"
+                size="lg"
+              />
               <Button 
                 size="icon" 
                 className="absolute -bottom-2 -right-2 w-8 h-8 gradient-primary button-shadow"
