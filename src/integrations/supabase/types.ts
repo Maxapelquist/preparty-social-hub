@@ -406,7 +406,7 @@ export type Database = {
         Returns: boolean
       }
       is_group_member: {
-        Args: { user_id: string; group_id: string }
+        Args: { _user_id: string; _group_id: string }
         Returns: boolean
       }
       upsert_profile: {
