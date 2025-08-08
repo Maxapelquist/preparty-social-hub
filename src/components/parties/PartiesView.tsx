@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PartyMap } from "@/components/map/PartyMap";
+import { PartyAttendeesViewer } from "./PartyAttendeesViewer";
 
 interface Party {
   id: string;
@@ -24,6 +25,8 @@ interface Party {
   current_attendees: number;
   max_attendees: number;
   vibe: string;
+  is_public: boolean;
+  group_id: string | null;
   profiles?: {
     display_name: string;
     avatar_url: string | null;
@@ -39,6 +42,7 @@ export function PartiesView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchParties();
@@ -274,6 +278,16 @@ export function PartiesView() {
                       <Button className="flex-1 gradient-primary text-white button-shadow">
                         Skicka Förfrågan
                       </Button>
+                      {party.is_public && (
+                        <Button 
+                          variant="outline" 
+                          className="glass"
+                          onClick={() => setSelectedPartyId(party.id)}
+                        >
+                          <Users size={16} className="mr-2" />
+                          Visa medlemmar
+                        </Button>
+                      )}
                       <Button variant="outline" size="icon" className="glass">
                         <Star size={16} />
                       </Button>

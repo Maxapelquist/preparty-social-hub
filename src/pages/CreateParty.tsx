@@ -31,7 +31,7 @@ function CreateParty() {
     max_attendees: '',
     vibe: '',
     is_public: false,
-    host_group_id: ''
+    group_id: ''
   });
 
   const vibes = ['Energetic', 'Chill', 'Crazy', 'Intimate', 'Wild'];
@@ -45,9 +45,18 @@ function CreateParty() {
   }, [user, navigate]);
 
   const fetchUserGroups = async () => {
-    // For now, use mock data since groups table doesn't exist yet
-    // In a real app, this would fetch actual groups from the database
-    setGroups([]);
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .select('id, name')
+        .eq('admin_id', user?.id);
+      
+      if (error) throw error;
+      setGroups(data || []);
+    } catch (error: any) {
+      console.error('Error fetching groups:', error);
+      setGroups([]);
+    }
   };
 
   const requestLocation = () => {
@@ -109,7 +118,9 @@ function CreateParty() {
           end_time: formData.end_time || null,
           max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : null,
           vibe: formData.vibe || 'Energetic',
-          is_active: true
+          is_active: true,
+          is_public: formData.is_public,
+          group_id: formData.group_id || null
         });
 
       if (error) throw error;
@@ -274,13 +285,13 @@ function CreateParty() {
             </div>
           </Card>
 
-          {/* Host Group Selection */}
-          {groups.length > 0 && (
-            <Card className="p-6 glass card-shadow">
-              <h2 className="text-lg font-semibold mb-4">Värdgrupp</h2>
-              <Select value={formData.host_group_id} onValueChange={(value) => setFormData(prev => ({ ...prev, host_group_id: value }))}>
+          {/* Group Selection */}
+          <Card className="p-6 glass card-shadow">
+            <h2 className="text-lg font-semibold mb-4">Grupp</h2>
+            <div className="space-y-4">
+              <Select value={formData.group_id} onValueChange={(value) => setFormData(prev => ({ ...prev, group_id: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Välj värdgrupp (valfritt)" />
+                  <SelectValue placeholder="Välj grupp (valfritt)" />
                 </SelectTrigger>
                 <SelectContent>
                   {groups.map(group => (
@@ -288,8 +299,13 @@ function CreateParty() {
                   ))}
                 </SelectContent>
               </Select>
-            </Card>
-          )}
+              {formData.group_id && (
+                <p className="text-xs text-muted-foreground">
+                  Alla medlemmar i gruppen kommer automatiskt att bjudas in
+                </p>
+              )}
+            </div>
+          </Card>
 
           {/* Submit Button */}
           <Button 
