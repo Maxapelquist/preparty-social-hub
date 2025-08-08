@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X, UserCheck } from "lucide-react";
+import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X, UserCheck, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -404,6 +404,39 @@ export function GroupsView() {
     fetchMyGroups(); // Refresh group data
   };
 
+  const startGroupChat = async (groupId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user is member of the group
+      const { data: membership, error: memberError } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('user_id', user.id)
+        .eq('group_id', groupId)
+        .single();
+
+      if (memberError || !membership) {
+        toast({
+          variant: "destructive",
+          title: "Åtkomst nekad",
+          description: "Du är inte medlem i denna grupp"
+        });
+        return;
+      }
+
+      // Navigate to group chat
+      navigate(`/groups/${groupId}/chat`);
+    } catch (error: any) {
+      console.error('Error starting group chat:', error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte starta gruppchatt",
+        description: error.message
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
       <div className="max-w-md mx-auto space-y-6">
@@ -621,17 +654,32 @@ export function GroupsView() {
 
                   <div className="flex space-x-2">
                     {group.is_admin && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="glass"
-                        onClick={() => openAddMembersDialog(group.id, group.name)}
-                      >
-                        <UserCheck size={14} className="mr-1" />
-                        Lägg till
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="glass"
+                          onClick={() => navigate(`/groups/${group.id}/edit`)}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="glass"
+                          onClick={() => openAddMembersDialog(group.id, group.name)}
+                        >
+                          <UserCheck size={14} className="mr-1" />
+                          Lägg till
+                        </Button>
+                      </>
                     )}
-                    <Button variant="outline" size="icon" className="glass">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="glass"
+                      onClick={() => startGroupChat(group.id)}
+                    >
                       <MessageCircle size={16} />
                     </Button>
                   </div>

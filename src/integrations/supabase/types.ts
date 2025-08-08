@@ -119,6 +119,30 @@ export type Database = {
           },
         ]
       }
+      group_conversations: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          last_message_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          last_message_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          last_message_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string
@@ -157,6 +181,33 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      group_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       groups: {
         Row: {
@@ -348,6 +399,14 @@ export type Database = {
       }
       is_conversation_participant: {
         Args: { _conversation_id: string }
+        Returns: boolean
+      }
+      is_group_conversation_participant: {
+        Args: { _conversation_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { user_id: string; group_id: string }
         Returns: boolean
       }
       upsert_profile: {
