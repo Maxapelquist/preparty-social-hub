@@ -165,7 +165,7 @@ function EditProfile() {
         description: "Dina ändringar har sparats."
       });
 
-      navigate('/profile');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",

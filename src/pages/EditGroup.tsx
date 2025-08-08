@@ -57,7 +57,7 @@ function EditGroup() {
           title: "Grupp inte hittad",
           description: "Gruppen finns inte eller har tagits bort"
         });
-        navigate('/groups');
+        navigate(-1);
         return;
       }
 
@@ -75,7 +75,7 @@ function EditGroup() {
         title: "Kunde inte ladda grupp",
         description: error.message
       });
-      navigate('/groups');
+      navigate(-1);
     }
   };
 
@@ -109,7 +109,7 @@ function EditGroup() {
         description: `${formData.name} har uppdaterats framgångsrikt.`
       });
 
-      navigate('/groups');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -140,7 +140,7 @@ function EditGroup() {
         description: "Gruppen har tagits bort framgångsrikt."
       });
 
-      navigate('/groups');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -172,7 +172,7 @@ function EditGroup() {
         description: "Du är inte längre medlem i denna grupp."
       });
 
-      navigate('/groups');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",

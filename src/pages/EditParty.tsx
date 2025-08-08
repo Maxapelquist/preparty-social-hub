@@ -83,7 +83,7 @@ function EditParty() {
           title: "Fest inte hittad",
           description: "Festen finns inte eller har tagits bort"
         });
-        navigate('/parties');
+        navigate(-1);
         return;
       }
 
@@ -93,7 +93,7 @@ function EditParty() {
           title: "Åtkomst nekad",
           description: "Du kan bara redigera fester som du har skapat"
         });
-        navigate('/parties');
+        navigate(-1);
         return;
       }
 
@@ -115,7 +115,7 @@ function EditParty() {
         title: "Kunde inte ladda fest",
         description: error.message
       });
-      navigate('/parties');
+      navigate(-1);
     }
   };
 
@@ -199,7 +199,7 @@ function EditParty() {
         description: `${formData.title} har uppdaterats framgångsrikt.`
       });
 
-      navigate('/parties');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -230,7 +230,7 @@ function EditParty() {
         description: "Festen har tagits bort framgångsrikt."
       });
 
-      navigate('/parties');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",

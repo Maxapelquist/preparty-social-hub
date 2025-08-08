@@ -149,7 +149,7 @@ export function DirectChat() {
         title: "Kunde inte ladda chatt",
         description: error.message
       });
-      navigate('/chat');
+      navigate(-1);
     }
   };
 

@@ -130,7 +130,7 @@ function CreateParty() {
         description: `${formData.title} har skapats framgångsrikt.`
       });
 
-      navigate('/parties');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",

@@ -40,7 +40,7 @@ function GroupChat() {
 
   useEffect(() => {
     if (!user || !groupId) {
-      navigate('/groups');
+      navigate(-1);
       return;
     }
     
@@ -78,7 +78,7 @@ function GroupChat() {
           title: "Åtkomst nekad",
           description: "Du är inte medlem i denna grupp"
         });
-        navigate('/groups');
+        navigate(-1);
         return;
       }
 
@@ -95,7 +95,7 @@ function GroupChat() {
           title: "Grupp inte hittad",
           description: "Gruppen finns inte eller har tagits bort"
         });
-        navigate('/groups');
+        navigate(-1);
         return;
       }
 
@@ -144,7 +144,7 @@ function GroupChat() {
         title: "Kunde inte starta gruppchatt",
         description: error.message
       });
-      navigate('/groups');
+      navigate(-1);
     }
   };
 

@@ -149,7 +149,7 @@ function CreateGroup() {
         description: `${formData.name} har skapats framgångsrikt.`
       });
 
-      navigate('/groups');
+      navigate(-1);
     } catch (error: any) {
       toast({
         variant: "destructive",
