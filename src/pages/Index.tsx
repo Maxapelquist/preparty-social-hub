@@ -33,7 +33,7 @@ const Index = () => {
         .single();
       
       // If user doesn't have a complete profile (missing age or occupation), redirect to onboarding
-      if (error || !data?.display_name || !data?.age || !data?.occupation) {
+      if (error || !data?.age || !data?.occupation) {
         navigate('/onboarding');
       } else {
         setHasProfile(true);

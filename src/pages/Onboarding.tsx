@@ -180,8 +180,8 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
         description: "Välkommen till PreParty!"
       });
       
-      // Use window.location to ensure clean navigation
-      window.location.href = '/dashboard';
+      // Navigate to profile page after completion
+      navigate('/profile');
       
     } catch (error: any) {
       console.error('Onboarding error:', error);

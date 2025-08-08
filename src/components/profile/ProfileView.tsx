@@ -71,8 +71,8 @@ export function ProfileView() {
     );
   }
 
-  // Check if profile is complete
-  const isProfileComplete = profile && profile.display_name && profile.age && profile.occupation;
+  // Check if profile is complete (consistent with Index.tsx logic)
+  const isProfileComplete = profile && profile.age && profile.occupation;
 
   // Show onboarding if profile is incomplete
   if (!isProfileComplete) {
