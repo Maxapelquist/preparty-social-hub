@@ -8,7 +8,7 @@ interface NavigationProps {
 
 const navigationItems = [
   { id: "profile", label: "Profil", icon: Home },
-  { id: "groups", label: "Grupper", icon: Users },
+  { id: "groups", label: "Vänner", icon: Users },
   { id: "parties", label: "Fester", icon: MapPin },
   { id: "chat", label: "Chatt", icon: MessageCircle },
   { id: "games", label: "Lekar", icon: Gamepad2 },
