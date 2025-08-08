@@ -143,15 +143,22 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
 
       console.log('Making profile update request for user:', user.id);
       
-      // Use the new simpler function - just update the missing fields
+      // First get the existing profile to preserve display_name and username
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('display_name, username, phone_number')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Use the new simpler function - preserve existing display_name and username
       const { data, error } = await supabase.rpc('upsert_profile_simple', {
-        p_display_name: null, // Keep existing from signup
-        p_username: null, // Keep existing from signup  
+        p_display_name: existingProfile?.display_name || null,
+        p_username: existingProfile?.username || null,
         p_age: parseInt(formData.age) || null,
         p_bio: formData.bio || null,
         p_university: null, // Not collected anymore
         p_occupation: formData.occupation || null,
-        p_phone_number: null, // Keep existing from signup
+        p_phone_number: existingProfile?.phone_number || null,
         p_interests: formData.interests.length > 0 ? formData.interests : null,
         p_location_lat: formData.locationLat,
         p_location_lng: formData.locationLng,
