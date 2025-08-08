@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,25 +16,17 @@ const INTERESTS = [
   'Film', 'Böcker', 'Dans', 'Konst', 'Sport', 'Tech'
 ];
 
-const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
-
 export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [checkingUsername, setCheckingUsername] = useState(false);
   
   const [formData, setFormData] = useState({
-    displayName: '',
-    username: '',
     age: '',
     bio: '',
-    university: '',
     occupation: '',
     interests: [] as string[],
     locationLat: null as number | null,
@@ -49,38 +41,6 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
-  };
-
-  const checkUsernameAvailability = async (username: string) => {
-    const candidate = username.trim().toLowerCase();
-    if (!candidate) {
-      setUsernameError('Ange ett användarnamn');
-      return false;
-    }
-    if (!USERNAME_REGEX.test(candidate)) {
-      setUsernameError('Endast a–z, 0–9, _ och . (3–20 tecken)');
-      return false;
-    }
-    setCheckingUsername(true);
-    setUsernameError(null);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('username', candidate)
-      .maybeSingle();
-    setCheckingUsername(false);
-
-    if (error) {
-      // Om api-fel, tillåt fortsättning men visa info
-      setUsernameError('Kunde inte verifiera just nu. Försök igen eller fortsätt.');
-      return true;
-    }
-    if (data && data.user_id !== user?.id) {
-      setUsernameError('Användarnamnet är upptaget');
-      return false;
-    }
-    setUsernameError(null);
-    return true;
   };
 
   const requestLocation = () => {
@@ -159,14 +119,13 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
       });
       return;
     }
-    
-    // Validera användarnamn en sista gång innan submit
-    const ok = await checkUsernameAvailability(formData.username);
-    if (!ok) {
+
+    // Validering - ålder och sysselsättning är obligatoriska
+    if (!formData.age || !formData.occupation) {
       toast({
         variant: "destructive",
-        title: "Ogiltigt användarnamn",
-        description: usernameError || "Kontrollera användarnamnet"
+        title: "Fyll i alla obligatoriska fält",
+        description: "Ålder och sysselsättning måste fyllas i."
       });
       return;
     }
@@ -182,17 +141,17 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
         throw new Error('Sessionen har löpt ut. Vänligen uppdatera sidan och logga in igen.');
       }
 
-      console.log('Making profile creation request for user:', user.id);
+      console.log('Making profile update request for user:', user.id);
       
-      // Use the new simpler function
+      // Use the new simpler function - just update the missing fields
       const { data, error } = await supabase.rpc('upsert_profile_simple', {
-        p_display_name: formData.displayName,
-        p_username: formData.username.trim().toLowerCase(),
+        p_display_name: null, // Keep existing from signup
+        p_username: null, // Keep existing from signup  
         p_age: parseInt(formData.age) || null,
         p_bio: formData.bio || null,
-        p_university: formData.university || null,
+        p_university: null, // Not collected anymore
         p_occupation: formData.occupation || null,
-        p_phone_number: null, // Phone number handled during signup
+        p_phone_number: null, // Keep existing from signup
         p_interests: formData.interests.length > 0 ? formData.interests : null,
         p_location_lat: formData.locationLat,
         p_location_lng: formData.locationLng,
@@ -200,7 +159,7 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
       });
 
       if (error) {
-        console.error('Profile creation error:', error);
+        console.error('Profile update error:', error);
         
         // Handle specific error types
         if (error.message?.includes('User not authenticated')) {
@@ -209,14 +168,12 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
           throw new Error('Sessionen har löpt ut. Vänligen uppdatera sidan och försök igen.');
         } else if (error.message?.includes('User does not exist in auth system')) {
           throw new Error('Autentiseringsfel. Vänligen logga ut och in igen.');
-        } else if (error.message?.includes('duplicate key') || error.code === '23505') {
-          throw new Error('Användarnamnet är upptaget. Välj ett annat.');
         } else {
-          throw new Error('Kunde inte skapa profil. Försök igen.');
+          throw new Error('Kunde inte uppdatera profil. Försök igen.');
         }
       }
 
-      console.log('Profile created successfully:', data);
+      console.log('Profile updated successfully:', data);
       
       toast({
         title: "Profil skapad!",
@@ -246,26 +203,18 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
     navigate('/dashboard');
   };
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="absolute inset-0 gradient-hero opacity-20" />
       
       <Card className="w-full max-w-lg p-8 glass card-shadow relative z-10">
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-8">
           <div className="text-center flex-1">
             <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
-              Välkommen!
+              Slutför din profil
             </h1>
             <p className="text-muted-foreground mt-2">
-              Låt oss skapa din profil (steg {step} av 3)
+              Berätta lite mer om dig själv
             </p>
           </div>
           {canSkip && (
@@ -280,94 +229,53 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
           )}
         </div>
 
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Visningsnamn</Label>
-              <Input
-                id="displayName"
-                value={formData.displayName}
-                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                className="glass"
-                placeholder="Ditt namn"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="username">Användarnamn</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
-                onBlur={() => checkUsernameAvailability(formData.username)}
-                className="glass"
-                placeholder="t.ex. alex_89"
-              />
-              {checkingUsername && (
-                <p className="text-xs text-muted-foreground">Kontrollerar tillgänglighet...</p>
-              )}
-              {usernameError && (
-                <p className="text-xs text-destructive">{usernameError}</p>
-              )}
-              {!usernameError && formData.username && !checkingUsername && (
-                <p className="text-xs text-green-600">Tillgängligt</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="age">Ålder</Label>
-              <Input
-                id="age"
-                type="number"
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="glass"
-                placeholder="20"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="university">Universitet/Skola</Label>
-              <Input
-                id="university"
-                value={formData.university}
-                onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                className="glass"
-                placeholder="KTH, SU, etc."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occupation">Yrke/Sysselsättning</Label>
-              <Input
-                id="occupation"
-                value={formData.occupation}
-                onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-                className="glass"
-                placeholder="Student, Utvecklare, etc."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                className="glass resize-none"
-                placeholder="Berätta lite om dig själv..."
-                rows={3}
-              />
-            </div>
+        <div className="space-y-6">
+          {/* Ålder */}
+          <div className="space-y-2">
+            <Label htmlFor="age">Ålder *</Label>
+            <Input
+              id="age"
+              type="number"
+              value={formData.age}
+              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+              className="glass"
+              placeholder="20"
+              required
+            />
           </div>
-        )}
 
-        {step === 2 && (
-          <div className="space-y-6">
+          {/* Sysselsättning */}
+          <div className="space-y-2">
+            <Label htmlFor="occupation">Sysselsättning (Skola eller jobb) *</Label>
+            <Input
+              id="occupation"
+              value={formData.occupation}
+              onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+              className="glass"
+              placeholder="t.ex. Student KTH, Utvecklare på Spotify, Gymnasieelev"
+              required
+            />
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-2">
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea
+              id="bio"
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              className="glass resize-none"
+              placeholder="Berätta lite om dig själv..."
+              rows={3}
+            />
+          </div>
+
+          {/* Intressen */}
+          <div className="space-y-4">
             <div>
-              <Label>Intressen</Label>
+              <Label>Intressen (valfritt)</Label>
               <p className="text-sm text-muted-foreground mb-4">
-                Välj vad du gillar (välj minst 3)
+                Välj vad du gillar för att hitta likasinnade
               </p>
               <div className="flex flex-wrap gap-2">
                 {INTERESTS.map((interest) => (
@@ -387,15 +295,14 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
               </div>
             </div>
           </div>
-        )}
 
-        {step === 3 && (
-          <div className="space-y-6 text-center">
-            <div className="p-6 glass rounded-lg">
-              <MapPin className="w-16 h-16 mx-auto mb-4 text-primary" />
-              <h3 className="text-xl font-semibold mb-2">Aktivera Plats (Valfritt)</h3>
-              <p className="text-muted-foreground mb-4">
-                Låt oss hitta fester nära dig för den bästa upplevelsen
+          {/* Plats */}
+          <div className="space-y-4">
+            <div className="p-6 glass rounded-lg text-center">
+              <MapPin className="w-12 h-12 mx-auto mb-4 text-primary" />
+              <h3 className="text-lg font-semibold mb-2">Aktivera Plats (Valfritt)</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Hitta fester nära dig
               </p>
               
               {locationEnabled ? (
@@ -408,7 +315,8 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
                   <Button 
                     onClick={requestLocation}
                     disabled={loading}
-                    className="gradient-primary text-white button-shadow w-full"
+                    variant="outline"
+                    className="glass w-full"
                   >
                     {loading ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -419,53 +327,32 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
                   </Button>
                   
                   <Button 
-                    variant="outline"
+                    variant="ghost"
                     onClick={skipLocation}
-                    className="glass w-full"
+                    className="w-full text-xs"
                   >
                     Hoppa över för nu
                   </Button>
                 </div>
               )}
             </div>
-            
-            <p className="text-sm text-muted-foreground">
-              Du kan alltid aktivera plats senare i dina inställningar
-            </p>
-          </div>
-        )}
-
-        <div className="flex justify-between mt-8">
-          {step > 1 && (
-            <Button variant="outline" onClick={prevStep} className="glass">
-              Tillbaka
-            </Button>
-          )}
-          
-          <div className="ml-auto">
-            {step < 3 ? (
-              <Button 
-                onClick={nextStep}
-                disabled={
-                  (step === 1 && (!formData.displayName || !formData.username || !formData.age || !formData.occupation || !!usernameError)) ||
-                  (step === 2 && formData.interests.length < 3)
-                }
-                className="gradient-primary text-white button-shadow"
-              >
-                Nästa
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleSubmit}
-                disabled={loading || !formData.displayName || !formData.username || !formData.age || !formData.occupation || !!usernameError || formData.interests.length < 3}
-                className="gradient-primary text-white button-shadow"
-              >
-                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Slutför
-              </Button>
-            )}
           </div>
         </div>
+
+        <div className="flex justify-center mt-8">
+          <Button 
+            onClick={handleSubmit}
+            disabled={loading || !formData.age || !formData.occupation}
+            className="gradient-primary text-white button-shadow w-full"
+          >
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Slutför Profil
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          * Obligatoriska fält
+        </p>
       </Card>
     </div>
   );
