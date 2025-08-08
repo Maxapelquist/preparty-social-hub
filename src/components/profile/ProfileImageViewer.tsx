@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,8 +89,8 @@ export function ProfileImageViewer({
 
   if (!isOpen || !images.length) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center">
+  const content = (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center">
       {/* Header */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
         <div className="flex items-center space-x-3">
@@ -207,4 +208,7 @@ export function ProfileImageViewer({
       />
     </div>
   );
+
+  // Render to document.body to escape any container constraints
+  return createPortal(content, document.body);
 }
