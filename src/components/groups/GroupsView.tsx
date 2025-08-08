@@ -473,9 +473,9 @@ export function GroupsView() {
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex-1">
+                  <div className="flex-1 cursor-pointer" onClick={() => navigate(`/profile/${friend.profile.user_id}`)}>
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold">
+                      <h3 className="font-semibold hover:text-primary transition-colors">
                         {friend.profile.display_name || 'Okänd vän'}
                       </h3>
                       <Badge variant="secondary" className="gradient-accent text-white">

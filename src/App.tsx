@@ -12,6 +12,7 @@ import EditProfile from "./pages/EditProfile";
 import CreateGroup from "./pages/CreateGroup";
 import CreateParty from "./pages/CreateParty";
 import FindFriends from "./pages/FindFriends";
+import FriendProfile from "./pages/FriendProfile";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/parties" element={<Index />} />
             <Route path="/parties/create" element={<CreateParty />} />
             <Route path="/friends" element={<FindFriends />} />
+            <Route path="/profile/:userId" element={<FriendProfile />} />
             <Route path="/chat" element={<Index />} />
             <Route path="/map" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
