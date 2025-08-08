@@ -79,6 +79,7 @@ export type Database = {
           created_at: string
           friend_id: string
           id: string
+          pair_key: string | null
           status: string
           updated_at: string
           user_id: string
@@ -87,6 +88,7 @@ export type Database = {
           created_at?: string
           friend_id: string
           id?: string
+          pair_key?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -95,6 +97,7 @@ export type Database = {
           created_at?: string
           friend_id?: string
           id?: string
+          pair_key?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -330,6 +333,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_friendship_pair_key: {
+        Args: { user_a: string; user_b: string }
+        Returns: string
+      }
       is_conversation_participant: {
         Args: { _conversation_id: string }
         Returns: boolean
