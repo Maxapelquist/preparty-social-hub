@@ -290,15 +290,50 @@ export function GroupsView() {
     }
   };
 
-  const startDirectChat = (friendUserId: string) => {
-    // For now, navigate to the general chat page
-    // TODO: Implement direct messaging functionality
-    navigate('/chat');
-    
-    toast({
-      title: "Chatt öppnas snart",
-      description: "Direktmeddelanden kommer snart!"
-    });
+  const startDirectChat = async (friendUserId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if conversation already exists
+      const { data: existingConv, error: checkError } = await supabase
+        .from('direct_conversations')
+        .select('id')
+        .or(`and(user_a.eq.${user.id},user_b.eq.${friendUserId}),and(user_a.eq.${friendUserId},user_b.eq.${user.id})`)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingConv && existingConv.length > 0) {
+        // Navigate to existing conversation
+        navigate(`/chat/${existingConv[0].id}`);
+        return;
+      }
+
+      // Create new conversation
+      const userA = user.id < friendUserId ? user.id : friendUserId;
+      const userB = user.id < friendUserId ? friendUserId : user.id;
+
+      const { data: newConv, error: createError } = await supabase
+        .from('direct_conversations')
+        .insert({
+          user_a: userA,
+          user_b: userB
+        })
+        .select('id')
+        .single();
+
+      if (createError) throw createError;
+
+      // Navigate to new conversation
+      navigate(`/chat/${newConv.id}`);
+    } catch (error: any) {
+      console.error('Error starting chat:', error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte starta chatt",
+        description: error.message
+      });
+    }
   };
 
   const acceptRequest = async (requestId: string) => {

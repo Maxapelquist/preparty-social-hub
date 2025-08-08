@@ -13,6 +13,7 @@ import CreateGroup from "./pages/CreateGroup";
 import CreateParty from "./pages/CreateParty";
 import FindFriends from "./pages/FindFriends";
 import FriendProfile from "./pages/FriendProfile";
+import { DirectChat } from "./components/chat/DirectChat";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/friends" element={<FindFriends />} />
             <Route path="/profile/:userId" element={<FriendProfile />} />
             <Route path="/chat" element={<Index />} />
+            <Route path="/chat/:conversationId" element={<DirectChat />} />
             <Route path="/map" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
