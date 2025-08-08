@@ -248,9 +248,11 @@ export type Database = {
           current_attendees: number | null
           description: string | null
           end_time: string | null
+          group_id: string | null
           host_id: string
           id: string
           is_active: boolean | null
+          is_public: boolean | null
           location_lat: number
           location_lng: number
           location_name: string
@@ -265,9 +267,11 @@ export type Database = {
           current_attendees?: number | null
           description?: string | null
           end_time?: string | null
+          group_id?: string | null
           host_id: string
           id?: string
           is_active?: boolean | null
+          is_public?: boolean | null
           location_lat: number
           location_lng: number
           location_name: string
@@ -282,9 +286,11 @@ export type Database = {
           current_attendees?: number | null
           description?: string | null
           end_time?: string | null
+          group_id?: string | null
           host_id?: string
           id?: string
           is_active?: boolean | null
+          is_public?: boolean | null
           location_lat?: number
           location_lng?: number
           location_name?: string
@@ -301,6 +307,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "parties_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
           },
         ]
       }
