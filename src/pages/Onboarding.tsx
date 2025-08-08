@@ -184,9 +184,8 @@ export default function Onboarding() {
 
       console.log('Making profile creation request for user:', user.id);
       
-      // Use the safe upsert function that checks auth.users existence
-      const { data, error } = await supabase.rpc('upsert_profile', {
-        p_user_id: user.id,
+      // Use the new simpler function
+      const { data, error } = await supabase.rpc('upsert_profile_simple', {
         p_display_name: formData.displayName,
         p_username: formData.username.trim().toLowerCase(),
         p_age: parseInt(formData.age) || null,
