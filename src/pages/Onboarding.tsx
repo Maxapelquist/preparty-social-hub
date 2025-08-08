@@ -183,7 +183,11 @@ export default function Onboarding() {
         console.error('Profile creation error:', error);
         
         // Handle specific error types
-        if (error.message?.includes('User does not exist in auth system')) {
+        if (error.message?.includes('User not authenticated')) {
+          throw new Error('Du är inte inloggad. Vänligen logga in igen.');
+        } else if (error.message?.includes('Authentication session expired')) {
+          throw new Error('Sessionen har löpt ut. Vänligen uppdatera sidan och försök igen.');
+        } else if (error.message?.includes('User does not exist in auth system')) {
           throw new Error('Autentiseringsfel. Vänligen logga ut och in igen.');
         } else if (error.message?.includes('duplicate key') || error.code === '23505') {
           throw new Error('Användarnamnet är upptaget. Välj ett annat.');
