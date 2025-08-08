@@ -9,6 +9,7 @@ import { ArrowLeft, Save, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProfilePictureUpload } from "@/components/profile/ProfilePictureUpload";
 
 const INTERESTS = [
   "Musik", "Sport", "Film", "Konst", "Resor", "Mat", "Gaming", 
@@ -32,7 +33,8 @@ function EditProfile() {
     age: '',
     bio: '',
     university: '',
-    interests: [] as string[]
+    interests: [] as string[],
+    profilePictures: [] as string[]
   });
 
   useEffect(() => {
@@ -47,7 +49,7 @@ function EditProfile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, username, age, bio, university, interests')
+        .select('display_name, username, age, bio, university, interests, profile_pictures')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -64,7 +66,8 @@ function EditProfile() {
           age: data.age?.toString() || '',
           bio: data.bio || '',
           university: data.university || '',
-          interests: data.interests || []
+          interests: data.interests || [],
+          profilePictures: data.profile_pictures || []
         });
       }
     } catch (err) {
@@ -143,7 +146,9 @@ function EditProfile() {
           age: formData.age ? parseInt(formData.age) : null,
           bio: formData.bio,
           university: formData.university,
-          interests: formData.interests
+          interests: formData.interests,
+          profile_pictures: formData.profilePictures,
+          avatar_url: formData.profilePictures.length > 0 ? formData.profilePictures[0] : null
         })
         .eq('user_id', user!.id);
 
@@ -317,6 +322,17 @@ function EditProfile() {
                 </Badge>
               ))}
             </div>
+          </Card>
+
+          {/* Profile Pictures */}
+          <Card className="p-6 glass card-shadow">
+            <ProfilePictureUpload
+              currentPictures={formData.profilePictures}
+              onPicturesChange={(pictures) => 
+                setFormData(prev => ({ ...prev, profilePictures: pictures }))
+              }
+              maxPictures={5}
+            />
           </Card>
 
           {/* Submit Button */}

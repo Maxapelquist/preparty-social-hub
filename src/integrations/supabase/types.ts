@@ -291,6 +291,7 @@ export type Database = {
           location_name: string | null
           occupation: string | null
           phone_number: string | null
+          profile_pictures: string[] | null
           university: string | null
           updated_at: string
           user_id: string
@@ -309,6 +310,7 @@ export type Database = {
           location_name?: string | null
           occupation?: string | null
           phone_number?: string | null
+          profile_pictures?: string[] | null
           university?: string | null
           updated_at?: string
           user_id: string
@@ -327,6 +329,7 @@ export type Database = {
           location_name?: string | null
           occupation?: string | null
           phone_number?: string | null
+          profile_pictures?: string[] | null
           university?: string | null
           updated_at?: string
           user_id?: string
@@ -378,19 +381,34 @@ export type Database = {
         Returns: Json
       }
       upsert_profile_simple: {
-        Args: {
-          p_display_name: string
-          p_username: string
-          p_age: number
-          p_bio: string
-          p_university: string
-          p_occupation: string
-          p_phone_number: string
-          p_interests: string[]
-          p_location_lat: number
-          p_location_lng: number
-          p_location_name: string
-        }
+        Args:
+          | {
+              p_display_name: string
+              p_username: string
+              p_age: number
+              p_bio: string
+              p_university: string
+              p_occupation: string
+              p_phone_number: string
+              p_interests: string[]
+              p_location_lat: number
+              p_location_lng: number
+              p_location_name: string
+            }
+          | {
+              p_display_name: string
+              p_username: string
+              p_age: number
+              p_bio: string
+              p_university: string
+              p_occupation: string
+              p_phone_number: string
+              p_interests: string[]
+              p_location_lat: number
+              p_location_lng: number
+              p_location_name: string
+              p_profile_pictures?: string[]
+            }
         Returns: Json
       }
     }

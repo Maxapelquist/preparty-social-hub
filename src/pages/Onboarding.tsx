@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ProfilePictureUpload } from '@/components/profile/ProfilePictureUpload';
 import { MapPin, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,7 +32,8 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
     interests: [] as string[],
     locationLat: null as number | null,
     locationLng: null as number | null,
-    locationName: ''
+    locationName: '',
+    profilePictures: [] as string[]
   });
 
   const toggleInterest = (interest: string) => {
@@ -162,7 +164,8 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
         p_interests: formData.interests.length > 0 ? formData.interests : null,
         p_location_lat: formData.locationLat,
         p_location_lng: formData.locationLng,
-        p_location_name: formData.locationName || null
+        p_location_name: formData.locationName || null,
+        p_profile_pictures: formData.profilePictures
       });
 
       if (error) {
@@ -301,6 +304,17 @@ export default function Onboarding({ canSkip = false }: { canSkip?: boolean }) {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Profile Pictures Section */}
+          <div className="space-y-4">
+            <ProfilePictureUpload
+              currentPictures={formData.profilePictures}
+              onPicturesChange={(pictures) => 
+                setFormData(prev => ({ ...prev, profilePictures: pictures }))
+              }
+              maxPictures={5}
+            />
           </div>
 
           {/* Plats */}
