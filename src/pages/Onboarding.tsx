@@ -151,7 +151,14 @@ export default function Onboarding() {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Autentiseringsfel",
+        description: "Du är inte inloggad. Vänligen uppdatera sidan."
+      });
+      return;
+    }
     
     // Validera användarnamn en sista gång innan submit
     const ok = await checkUsernameAvailability(formData.username);
@@ -165,7 +172,18 @@ export default function Onboarding() {
     }
 
     setLoading(true);
+    
     try {
+      // Refresh session before making the request to ensure it's valid
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError);
+        throw new Error('Sessionen har löpt ut. Vänligen uppdatera sidan och logga in igen.');
+      }
+
+      console.log('Making profile creation request for user:', user.id);
+      
       // Use the safe upsert function that checks auth.users existence
       const { data, error } = await supabase.rpc('upsert_profile', {
         p_user_id: user.id,
@@ -199,12 +217,16 @@ export default function Onboarding() {
         }
       }
 
+      console.log('Profile created successfully:', data);
+      
       toast({
         title: "Profil skapad!",
         description: "Välkommen till PreParty!"
       });
       
-      navigate('/dashboard');
+      // Use window.location to ensure clean navigation
+      window.location.href = '/dashboard';
+      
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast({
