@@ -624,48 +624,63 @@ export function GroupsView() {
           ) : myGroups.length > 0 ? (
             myGroups.map((group) => (
               <Card key={group.id} className="p-4 glass card-shadow">
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Avatar className="w-12 h-12 border-2 border-primary/20">
-                      <AvatarFallback className="gradient-primary text-white font-bold">
-                        {group.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {group.is_admin && (
-                      <Crown size={14} className="absolute -top-1 -right-1 text-yellow-400" />
-                    )}
+                <div className="space-y-3">
+                  {/* Header Row */}
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Avatar className="w-12 h-12 border-2 border-primary/20">
+                        <AvatarFallback className="gradient-primary text-white font-bold">
+                          {group.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {group.is_admin && (
+                        <Crown size={14} className="absolute -top-1 -right-1 text-yellow-400" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold truncate">{group.name}</h3>
+                        <Badge variant="secondary" className="gradient-primary text-white shrink-0">
+                          Aktiv
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3 text-sm text-muted-foreground">
+                        <span className="flex items-center">
+                          <Users size={14} className="mr-1" />
+                          {group.member_count}
+                        </span>
+                        <span className="flex items-center">
+                          <Clock size={14} className="mr-1" />
+                          {new Date(group.created_at).toLocaleDateString('sv')}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold">{group.name}</h3>
-                      <Badge variant="secondary" className="gradient-primary text-white">
-                        Aktiv
-                      </Badge>
-                    </div>
+                  {/* Action Buttons Row */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="glass flex-1 min-w-0"
+                      onClick={() => startGroupChat(group.id)}
+                    >
+                      <MessageCircle size={14} className="mr-1" />
+                      Chatta
+                    </Button>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span className="flex items-center">
-                        <Users size={14} className="mr-1" />
-                        {group.member_count} medlemmar
-                      </span>
-                      <span className="flex items-center">
-                        <Clock size={14} className="mr-1" />
-                        {new Date(group.created_at).toLocaleDateString('sv')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
                     {group.is_admin && (
                       <>
                         <Button
                           variant="outline"
-                          size="icon"
+                          size="sm"
                           className="glass"
                           onClick={() => navigate(`/groups/${group.id}/edit`)}
                         >
-                          <Edit size={14} />
+                          <Edit size={14} className="mr-1" />
+                          Redigera
                         </Button>
                         <Button
                           variant="outline"
@@ -678,14 +693,6 @@ export function GroupsView() {
                         </Button>
                       </>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="glass"
-                      onClick={() => startGroupChat(group.id)}
-                    >
-                      <MessageCircle size={16} />
-                    </Button>
                   </div>
                 </div>
               </Card>

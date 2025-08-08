@@ -48,11 +48,11 @@ export function AddMembersDialog({
   const fetchAvailableFriends = async () => {
     setLoading(true);
     try {
-      // Get all accepted friends
+      // Get all accepted friends (both directions)
       const { data: friendsData, error: friendsError } = await supabase
         .from('friends')
-        .select('friend_id')
-        .eq('user_id', user!.id)
+        .select('user_id, friend_id')
+        .or(`user_id.eq.${user!.id},friend_id.eq.${user!.id}`)
         .eq('status', 'accepted');
 
       if (friendsError) throw friendsError;
@@ -62,7 +62,10 @@ export function AddMembersDialog({
         return;
       }
 
-      const friendIds = friendsData.map(f => f.friend_id);
+      // Get friend IDs (the other person in each friendship)
+      const friendIds = friendsData.map(f => 
+        f.user_id === user!.id ? f.friend_id : f.user_id
+      );
 
       // Get current group members to exclude them
       const { data: membersData, error: membersError } = await supabase
