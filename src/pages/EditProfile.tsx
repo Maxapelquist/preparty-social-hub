@@ -216,7 +216,7 @@ function EditProfile() {
             variant="outline" 
             size="icon" 
             className="glass"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft size={20} />
           </Button>

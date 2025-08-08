@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Trash2, UserX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,7 @@ function EditGroup() {
     name: '',
     description: ''
   });
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -60,16 +61,9 @@ function EditGroup() {
         return;
       }
 
-      if (data.admin_id !== user!.id) {
-        toast({
-          variant: "destructive",
-          title: "Åtkomst nekad",
-          description: "Du kan bara redigera grupper som du har skapat"
-        });
-        navigate('/groups');
-        return;
-      }
-
+      const userIsAdmin = data.admin_id === user!.id;
+      setIsAdmin(userIsAdmin);
+      
       setGroup(data);
       setFormData({
         name: data.name,
@@ -127,6 +121,69 @@ function EditGroup() {
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!confirm('Är du säker på att du vill ta bort denna grupp? Detta kan inte ångras.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId!);
+
+      if (error) throw error;
+
+      toast({
+        title: "Grupp borttagen!",
+        description: "Gruppen har tagits bort framgångsrikt."
+      });
+
+      navigate('/groups');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ta bort grupp",
+        description: error.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!confirm('Är du säker på att du vill lämna denna grupp?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId!)
+        .eq('user_id', user!.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Du har lämnat gruppen",
+        description: "Du är inte längre medlem i denna grupp."
+      });
+
+      navigate('/groups');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte lämna grupp",
+        description: error.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!group) {
     return (
       <div className="min-h-screen pb-20 px-4 pt-8">
@@ -147,12 +204,12 @@ function EditGroup() {
             variant="outline" 
             size="icon" 
             className="glass"
-            onClick={() => navigate('/groups')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
-            Redigera Grupp
+            {isAdmin ? 'Redigera Grupp' : 'Gruppinformation'}
           </h1>
         </div>
 
@@ -171,6 +228,7 @@ function EditGroup() {
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="t.ex. KTH Crew"
                   required
+                  disabled={!isAdmin}
                 />
               </div>
 
@@ -181,20 +239,55 @@ function EditGroup() {
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Beskriv er grupp..."
                   rows={3}
+                  disabled={!isAdmin}
                 />
               </div>
+              
+              {!isAdmin && (
+                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                  Du kan bara visa gruppinformationen. Endast administratören kan redigera gruppen.
+                </p>
+              )}
             </div>
           </Card>
 
-          {/* Submit Button */}
-          <Button 
-            type="submit" 
-            className="w-full gradient-primary text-white button-shadow h-12"
-            disabled={loading}
-          >
-            <Save size={18} className="mr-2" />
-            {loading ? 'Sparar ändringar...' : 'Spara ändringar'}
-          </Button>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            {isAdmin && (
+              <Button 
+                type="submit" 
+                className="w-full gradient-primary text-white button-shadow h-12"
+                disabled={loading}
+              >
+                <Save size={18} className="mr-2" />
+                {loading ? 'Sparar ändringar...' : 'Spara ändringar'}
+              </Button>
+            )}
+
+            {isAdmin ? (
+              <Button 
+                type="button"
+                variant="destructive" 
+                className="w-full h-12"
+                onClick={handleDeleteGroup}
+                disabled={loading}
+              >
+                <Trash2 size={18} className="mr-2" />
+                Ta bort grupp
+              </Button>
+            ) : (
+              <Button 
+                type="button"
+                variant="destructive" 
+                className="w-full h-12"
+                onClick={handleLeaveGroup}
+                disabled={loading}
+              >
+                <UserX size={18} className="mr-2" />
+                Lämna grupp
+              </Button>
+            )}
+          </div>
 
         </form>
       </div>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
-import { Search, Filter, MapPin, Clock, Users, Plus, Map, Star, MessageCircle } from "lucide-react";
+import { Search, Filter, MapPin, Clock, Users, Plus, Map, Star, MessageCircle, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -278,9 +278,19 @@ export function PartiesView() {
 
                     {/* Actions */}
                     <div className="flex space-x-3 pt-2">
-                      <Button className="flex-1 gradient-primary text-white button-shadow">
-                        Skicka Förfrågan
-                      </Button>
+                      {party.host_id === user?.id ? (
+                        <Button 
+                          className="flex-1 gradient-primary text-white button-shadow"
+                          onClick={() => navigate(`/parties/${party.id}/edit`)}
+                        >
+                          <Edit size={16} className="mr-2" />
+                          Redigera
+                        </Button>
+                      ) : (
+                        <Button className="flex-1 gradient-primary text-white button-shadow">
+                          Skicka Förfrågan
+                        </Button>
+                      )}
                       {party.is_public && (
                         <Button 
                           variant="outline" 

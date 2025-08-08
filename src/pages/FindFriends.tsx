@@ -160,7 +160,7 @@ function FindFriends() {
             variant="outline" 
             size="icon" 
             className="glass"
-            onClick={() => navigate('/groups')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft size={20} />
           </Button>

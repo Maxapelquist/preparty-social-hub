@@ -325,7 +325,7 @@ export function DirectChat() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate(-1)}
             >
               <ArrowLeft size={20} />
             </Button>

@@ -18,6 +18,7 @@ import FindFriends from "./pages/FindFriends";
 import FriendProfile from "./pages/FriendProfile";
 import { DirectChat } from "./components/chat/DirectChat";
 import EditGroup from "./pages/EditGroup";
+import EditParty from "./pages/EditParty";
 import GroupChat from "./components/chat/GroupChat";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/groups/:groupId/chat" element={<GroupChat />} />
             <Route path="/parties" element={<Index />} />
             <Route path="/parties/create" element={<CreateParty />} />
+            <Route path="/parties/:partyId/edit" element={<EditParty />} />
             <Route path="/friends" element={<FindFriends />} />
             <Route path="/profile/:userId" element={<FriendProfile />} />
             <Route path="/chat" element={<Index />} />
