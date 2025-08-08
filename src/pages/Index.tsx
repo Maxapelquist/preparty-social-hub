@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Navigation } from "@/components/ui/navigation";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { GroupsView } from "@/components/groups/GroupsView";
@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("profile");
+  const { tab } = useParams();
+  const activeTab = tab || "profile";
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
@@ -71,10 +72,18 @@ const Index = () => {
     }
   };
 
+  const handleTabChange = (newTab: string) => {
+    if (newTab === "profile") {
+      navigate("/dashboard");
+    } else {
+      navigate(`/dashboard/${newTab}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {renderActiveView()}
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };

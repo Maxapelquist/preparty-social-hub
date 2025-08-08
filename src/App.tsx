@@ -34,23 +34,19 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Index />} />
+            <Route path="/dashboard/:tab" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/profile" element={<Index />} />
             <Route path="/profile/edit" element={<EditProfile />} />
-            <Route path="/groups" element={<Index />} />
             <Route path="/groups/create" element={<CreateGroup />} />
             <Route path="/groups/:groupId/edit" element={<EditGroup />} />
             <Route path="/groups/:groupId/chat" element={<GroupChat />} />
-            <Route path="/parties" element={<Index />} />
             <Route path="/parties/create" element={<CreateParty />} />
             <Route path="/parties/:partyId/edit" element={<EditParty />} />
             <Route path="/friends" element={<FindFriends />} />
             <Route path="/profile/:userId" element={<FriendProfile />} />
-            <Route path="/chat" element={<Index />} />
             <Route path="/chat/:conversationId" element={<DirectChat />} />
-            <Route path="/map" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
