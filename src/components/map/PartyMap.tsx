@@ -104,39 +104,99 @@ export function PartyMap({ parties, userLocation }: PartyMapProps) {
 
   return (
     <div className="space-y-4">
-      {/* Map placeholder */}
-      <Card className="h-64 glass card-shadow relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <MapPin className="w-12 h-12 mx-auto text-primary" />
-            <div>
-              <h3 className="text-lg font-semibold">Festkarta</h3>
-              <p className="text-sm text-muted-foreground">
-                {parties.length} fester i området
-              </p>
+      {/* Snap Map style header */}
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold gradient-primary bg-clip-text text-transparent">
+          Festkarta
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {parties.length} fester runt dig • {userLocation ? 'Plats aktiverad' : 'Ingen plats'}
+        </p>
+      </div>
+
+      {/* Map visualization */}
+      <Card className="h-80 glass card-shadow relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10" />
+        
+        {/* User location indicator */}
+        {userLocation && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+            <div className="relative">
+              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" />
+              <div className="absolute inset-0 w-4 h-4 bg-blue-400/30 rounded-full animate-ping" />
             </div>
-            <Button 
-              onClick={() => setShowTokenInput(true)}
-              className="gradient-primary text-white button-shadow"
-            >
-              Aktivera Interaktiv Karta
-            </Button>
+            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+              <span className="text-xs text-blue-600 font-medium bg-white/80 px-2 py-1 rounded-full">
+                Du
+              </span>
+            </div>
           </div>
+        )}
+
+        {/* Party markers - Snap Map style */}
+        <div className="absolute inset-0 pointer-events-none">
+          {parties.slice(0, 8).map((party, index) => {
+            // Create a more natural distribution around the user
+            const angle = (index * 45) + Math.random() * 30;
+            const distance = 30 + Math.random() * 40;
+            const x = 50 + Math.cos(angle * Math.PI / 180) * distance;
+            const y = 50 + Math.sin(angle * Math.PI / 180) * distance;
+            
+            return (
+              <div
+                key={party.id}
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                style={{
+                  left: `${Math.max(10, Math.min(90, x))}%`,
+                  top: `${Math.max(10, Math.min(90, y))}%`,
+                }}
+                onClick={() => setSelectedParty(party)}
+              >
+                {/* Party marker */}
+                <div className="relative group pointer-events-auto">
+                  <div className={`w-8 h-8 rounded-full ${getVibeColor(party.vibe)} flex items-center justify-center text-white text-xs font-bold shadow-lg transform transition-transform group-hover:scale-110 animate-pulse`}>
+                    {party.current_attendees}
+                  </div>
+                  
+                  {/* Pulse effect */}
+                  <div className={`absolute inset-0 w-8 h-8 rounded-full ${getVibeColor(party.vibe)} opacity-30 animate-ping`} />
+                  
+                  {/* Hover tooltip */}
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-white/90 backdrop-blur text-xs p-2 rounded-lg shadow-lg whitespace-nowrap">
+                      <p className="font-semibold text-foreground">{party.title}</p>
+                      <p className="text-muted-foreground">{party.location_name}</p>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/90" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Party markers overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          {parties.slice(0, 3).map((party, index) => (
-            <div
-              key={party.id}
-              className={`absolute w-4 h-4 rounded-full ${getVibeColor(party.vibe)} animate-pulse`}
-              style={{
-                left: `${20 + index * 25}%`,
-                top: `${30 + index * 15}%`,
-              }}
-            />
-          ))}
+        {/* Enable interactive map button */}
+        <div className="absolute bottom-4 right-4">
+          <Button 
+            size="sm"
+            onClick={() => setShowTokenInput(true)}
+            className="gradient-primary text-white button-shadow"
+          >
+            <MapPin size={14} className="mr-1" />
+            Interaktiv
+          </Button>
+        </div>
+
+        {/* Location grid overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="w-full h-full" style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }} />
         </div>
       </Card>
 

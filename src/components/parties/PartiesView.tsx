@@ -44,6 +44,7 @@ export function PartiesView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [locationEnabled, setLocationEnabled] = useState(false);
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,6 +94,8 @@ export function PartiesView() {
         lat: data.location_lat,
         lng: data.location_lng
       });
+      setLocationEnabled(true);
+      setShowMap(true); // Auto-show map when location is available
     }
   };
 
@@ -151,15 +154,16 @@ export function PartiesView() {
               size="sm" 
               className={`glass ${showMap ? 'gradient-primary text-white' : ''}`}
               onClick={() => setShowMap(!showMap)}
+              disabled={!locationEnabled}
             >
               <Map size={16} className="mr-2" />
-              {showMap ? 'Lista' : 'Karta'}
+              {locationEnabled ? (showMap ? 'Lista' : 'Karta') : 'Ingen plats'}
             </Button>
           </div>
         </div>
 
         {/* Map or Stats */}
-        {showMap ? (
+        {(showMap && locationEnabled) ? (
           <PartyMap parties={filteredParties} userLocation={userLocation} />
         ) : (
           <div className="grid grid-cols-3 gap-3">
@@ -183,7 +187,7 @@ export function PartiesView() {
         )}
 
         {/* Parties List */}
-        {!showMap && (
+        {(!showMap || !locationEnabled) && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center">
               <Star size={20} className="mr-2 text-primary" />
