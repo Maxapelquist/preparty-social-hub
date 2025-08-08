@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Search, UserPlus, Users, MessageCircle } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, Users, MessageCircle, Clock, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ function FindFriends() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +38,27 @@ function FindFriends() {
       return;
     }
     fetchNearbyProfiles();
+    fetchExistingPendingRequests();
   }, [user, navigate]);
+
+  const fetchExistingPendingRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('friends')
+        .select('friend_id')
+        .eq('user_id', user!.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      setSentRequests(data?.map(req => req.friend_id) || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ladda befintliga förfrågningar",
+        description: error.message
+      });
+    }
+  };
 
   const fetchNearbyProfiles = async () => {
     try {
@@ -87,6 +108,7 @@ function FindFriends() {
   };
 
   const sendFriendRequest = async (targetUserId: string, displayName: string) => {
+    setSendingRequest(targetUserId);
     try {
       // Skicka förfrågan
       const { error } = await supabase
@@ -117,6 +139,8 @@ function FindFriends() {
         title: "Kunde inte skicka förfrågan",
         description: error.message
       });
+    } finally {
+      setSendingRequest(null);
     }
   };
 
@@ -236,13 +260,20 @@ function FindFriends() {
 
                     <div className="flex space-x-2 pt-2">
                       {sentRequests.includes(profile.user_id) ? (
+                        <Button variant="outline" disabled className="flex-1 border-secondary/50 text-secondary">
+                          <Clock size={16} className="mr-2" />
+                          Väntar på svar
+                        </Button>
+                      ) : sendingRequest === profile.user_id ? (
                         <Button variant="outline" disabled className="flex-1">
-                          Förfrågan skickad
+                          <Loader2 size={16} className="mr-2 animate-spin" />
+                          Skickar...
                         </Button>
                       ) : (
                         <Button 
                           className="flex-1 gradient-primary text-white"
                           onClick={() => sendFriendRequest(profile.user_id, profile.display_name)}
+                          disabled={sendingRequest !== null}
                         >
                           <UserPlus size={16} className="mr-2" />
                           Lägg till vän
