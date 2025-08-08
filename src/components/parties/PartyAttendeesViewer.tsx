@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { X, ChevronLeft, ChevronRight, Users, MapPin, Heart } from "lucide-react";
+import { ClickableAvatar } from "@/components/profile/ClickableAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,7 @@ interface Attendee {
     occupation: string | null;
     interests: string[];
     location_name: string | null;
+    profile_pictures: string[];
   } | null;
 }
 
@@ -53,7 +54,8 @@ export function PartyAttendeesViewer({ partyId, isOpen, onClose }: PartyAttendee
             university,
             occupation,
             interests,
-            location_name
+            location_name,
+            profile_pictures
           )
         `)
         .eq('party_id', partyId)
@@ -120,12 +122,14 @@ export function PartyAttendeesViewer({ partyId, isOpen, onClose }: PartyAttendee
             <div className="relative h-full flex flex-col">
               {/* Avatar Section */}
               <div className="relative h-64 gradient-hero flex items-center justify-center">
-                <Avatar className="w-32 h-32 border-4 border-white/20">
-                  <AvatarImage src={currentAttendee?.profiles?.avatar_url || undefined} className="object-cover" />
-                  <AvatarFallback className="gradient-primary text-white text-3xl font-bold">
-                    {(currentAttendee?.profiles?.display_name || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <ClickableAvatar
+                  src={currentAttendee?.profiles?.avatar_url}
+                  fallback={(currentAttendee?.profiles?.display_name || 'U').charAt(0).toUpperCase()}
+                  userName={currentAttendee?.profiles?.display_name || 'Okänd användare'}
+                  profilePictures={currentAttendee?.profiles?.profile_pictures || []}
+                  className="w-32 h-32 border-4 border-white/20"
+                  size="lg"
+                />
                 
                 {/* Navigation Arrows */}
                 {attendees.length > 1 && (
