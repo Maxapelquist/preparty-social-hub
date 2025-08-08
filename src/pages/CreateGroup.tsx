@@ -221,7 +221,7 @@ function CreateGroup() {
                 >
                   <Checkbox
                     checked={formData.selectedFriends.includes(friend.id)}
-                    onChange={() => toggleFriend(friend.id)}
+                    onCheckedChange={() => toggleFriend(friend.id)}
                   />
                   
                   <Avatar className="w-10 h-10">

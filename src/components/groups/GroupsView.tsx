@@ -4,10 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X } from "lucide-react";
+import { Plus, Users, Crown, MessageCircle, MapPin, Clock, Check, X, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AddMembersDialog } from "./AddMembersDialog";
 
 interface Group {
   id: string;
@@ -62,6 +63,11 @@ export function GroupsView() {
   
   const [myFriends, setMyFriends] = useState<Friend[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
+  const [addMembersDialog, setAddMembersDialog] = useState<{
+    open: boolean;
+    groupId: string;
+    groupName: string;
+  }>({ open: false, groupId: '', groupName: '' });
 
   useEffect(() => {
     if (user) {
@@ -390,6 +396,14 @@ export function GroupsView() {
     }
   };
 
+  const openAddMembersDialog = (groupId: string, groupName: string) => {
+    setAddMembersDialog({ open: true, groupId, groupName });
+  };
+
+  const handleMembersAdded = () => {
+    fetchMyGroups(); // Refresh group data
+  };
+
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
       <div className="max-w-md mx-auto space-y-6">
@@ -605,9 +619,22 @@ export function GroupsView() {
                     </div>
                   </div>
 
-                  <Button variant="outline" size="icon" className="glass">
-                    <MessageCircle size={16} />
-                  </Button>
+                  <div className="flex space-x-2">
+                    {group.is_admin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="glass"
+                        onClick={() => openAddMembersDialog(group.id, group.name)}
+                      >
+                        <UserCheck size={14} className="mr-1" />
+                        Lägg till
+                      </Button>
+                    )}
+                    <Button variant="outline" size="icon" className="glass">
+                      <MessageCircle size={16} />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))
@@ -681,6 +708,14 @@ export function GroupsView() {
           </div>
         </Card>
       </div>
+
+      <AddMembersDialog
+        open={addMembersDialog.open}
+        onOpenChange={(open) => setAddMembersDialog(prev => ({ ...prev, open }))}
+        groupId={addMembersDialog.groupId}
+        groupName={addMembersDialog.groupName}
+        onMembersAdded={handleMembersAdded}
+      />
     </div>
   );
 }
