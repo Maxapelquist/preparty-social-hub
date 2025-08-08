@@ -86,12 +86,13 @@ export default function Onboarding() {
     if (!navigator.geolocation) {
       toast({
         variant: "destructive",
-        title: "Fel",
-        description: "Din webbläsare stöder inte geolocation"
+        title: "Plats ej tillgänglig",
+        description: "Din webbläsare stöder inte platstjänster. Du kan hoppa över detta steg."
       });
       return;
     }
 
+    setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setFormData(prev => ({
@@ -101,19 +102,51 @@ export default function Onboarding() {
           locationName: "Din aktuella plats"
         }));
         setLocationEnabled(true);
+        setLoading(false);
         toast({
           title: "Plats aktiverad!",
           description: "Vi kan nu visa fester nära dig"
         });
       },
       (error) => {
+        setLoading(false);
+        let errorMessage = "Kunde inte hämta din plats. ";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Du nekade platsåtkomst. Du kan aktivera det senare i inställningar.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Platsinformation är inte tillgänglig.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Förfrågan om plats tog för lång tid.";
+            break;
+          default:
+            errorMessage += "Ett okänt fel uppstod.";
+            break;
+        }
+        
         toast({
           variant: "destructive",
-          title: "Kunde inte hämta plats",
-          description: "Vänligen tillåt platsåtkomst för att få bästa upplevelsen"
+          title: "Platsproblem",
+          description: errorMessage
         });
+      },
+      {
+        timeout: 10000,
+        enableHighAccuracy: false,
+        maximumAge: 300000
       }
     );
+  };
+
+  const skipLocation = () => {
+    setLocationEnabled(false);
+    toast({
+      title: "Plats hoppades över",
+      description: "Du kan aktivera plats senare i dina inställningar"
+    });
   };
 
   const handleSubmit = async () => {
@@ -132,28 +165,31 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: user.id,
-          display_name: formData.displayName,
-          username: formData.username.trim().toLowerCase(),
-          age: parseInt(formData.age),
-          bio: formData.bio,
-          university: formData.university,
-          interests: formData.interests,
-          location_lat: formData.locationLat,
-          location_lng: formData.locationLng,
-          location_name: formData.locationName
-        });
+      // Use the safe upsert function that checks auth.users existence
+      const { data, error } = await supabase.rpc('upsert_profile', {
+        p_user_id: user.id,
+        p_display_name: formData.displayName,
+        p_username: formData.username.trim().toLowerCase(),
+        p_age: parseInt(formData.age) || null,
+        p_bio: formData.bio || null,
+        p_university: formData.university || null,
+        p_interests: formData.interests.length > 0 ? formData.interests : null,
+        p_location_lat: formData.locationLat,
+        p_location_lng: formData.locationLng,
+        p_location_name: formData.locationName || null
+      });
 
       if (error) {
-        // Hantera unikhetsfel snyggt
-        const isUnique = (error as any)?.code === '23505' || (error as any)?.message?.toLowerCase()?.includes('duplicate key');
-        if (isUnique) {
+        console.error('Profile creation error:', error);
+        
+        // Handle specific error types
+        if (error.message?.includes('User does not exist in auth system')) {
+          throw new Error('Autentiseringsfel. Vänligen logga ut och in igen.');
+        } else if (error.message?.includes('duplicate key') || error.code === '23505') {
           throw new Error('Användarnamnet är upptaget. Välj ett annat.');
+        } else {
+          throw new Error('Kunde inte skapa profil. Försök igen.');
         }
-        throw error;
       }
 
       toast({
@@ -163,10 +199,11 @@ export default function Onboarding() {
       
       navigate('/');
     } catch (error: any) {
+      console.error('Onboarding error:', error);
       toast({
         variant: "destructive",
-        title: "Fel",
-        description: error.message
+        title: "Fel vid profilering",
+        description: error.message || "Ett oväntat fel uppstod. Försök igen."
       });
     } finally {
       setLoading(false);
@@ -297,7 +334,7 @@ export default function Onboarding() {
           <div className="space-y-6 text-center">
             <div className="p-6 glass rounded-lg">
               <MapPin className="w-16 h-16 mx-auto mb-4 text-primary" />
-              <h3 className="text-xl font-semibold mb-2">Aktivera Plats</h3>
+              <h3 className="text-xl font-semibold mb-2">Aktivera Plats (Valfritt)</h3>
               <p className="text-muted-foreground mb-4">
                 Låt oss hitta fester nära dig för den bästa upplevelsen
               </p>
@@ -308,18 +345,33 @@ export default function Onboarding() {
                   <span>Plats aktiverad!</span>
                 </div>
               ) : (
-                <Button 
-                  onClick={requestLocation}
-                  className="gradient-primary text-white button-shadow"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Aktivera Plats
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={requestLocation}
+                    disabled={loading}
+                    className="gradient-primary text-white button-shadow w-full"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <MapPin className="w-4 h-4 mr-2" />
+                    )}
+                    Aktivera Plats
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={skipLocation}
+                    className="glass w-full"
+                  >
+                    Hoppa över för nu
+                  </Button>
+                </div>
               )}
             </div>
             
             <p className="text-sm text-muted-foreground">
-              Du kan alltid ändra detta senare i dina inställningar
+              Du kan alltid aktivera plats senare i dina inställningar
             </p>
           </div>
         )}
@@ -335,7 +387,10 @@ export default function Onboarding() {
             {step < 3 ? (
               <Button 
                 onClick={nextStep}
-                disabled={step === 1 && (!formData.displayName || !formData.username || !!usernameError)}
+                disabled={
+                  (step === 1 && (!formData.displayName || !formData.username || !!usernameError)) ||
+                  (step === 2 && formData.interests.length < 3)
+                }
                 className="gradient-primary text-white button-shadow"
               >
                 Nästa
@@ -343,7 +398,7 @@ export default function Onboarding() {
             ) : (
               <Button 
                 onClick={handleSubmit}
-                disabled={loading || !formData.displayName || !formData.username || !!usernameError}
+                disabled={loading || !formData.displayName || !formData.username || !!usernameError || formData.interests.length < 3}
                 className="gradient-primary text-white button-shadow"
               >
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

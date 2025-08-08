@@ -341,6 +341,21 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: boolean
       }
+      upsert_profile: {
+        Args: {
+          p_user_id: string
+          p_display_name: string
+          p_username: string
+          p_age: number
+          p_bio: string
+          p_university: string
+          p_interests: string[]
+          p_location_lat: number
+          p_location_lng: number
+          p_location_name: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
