@@ -294,7 +294,15 @@ export type Database = {
           updated_at?: string
           vibe?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_parties_host_id"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       party_attendees: {
         Row: {
