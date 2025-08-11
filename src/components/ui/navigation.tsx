@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Home, Users, MapPin, MessageCircle, Gamepad2 } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Badge } from "./badge";
 
 interface NavigationProps {
   activeTab: string;
@@ -15,12 +17,24 @@ const navigationItems = [
 ];
 
 export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+  const { counts } = useNotifications();
+
+  const getNotificationCount = (tabId: string) => {
+    switch (tabId) {
+      case 'groups': return counts.groups;
+      case 'chat': return counts.chat;
+      case 'parties': return counts.parties;
+      default: return 0;
+    }
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-t border-border">
       <div className="flex items-center justify-around px-4 py-2 max-w-md mx-auto">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
+          const notificationCount = getNotificationCount(item.id);
           
           return (
             <button
@@ -41,6 +55,11 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
                 <Icon size={20} className="mb-1" />
                 {isActive && (
                   <div className="absolute inset-0 bg-primary-glow/20 rounded-full blur-md" />
+                )}
+                {notificationCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center p-0 text-xs font-bold">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </Badge>
                 )}
               </div>
               <span className="text-xs font-medium">{item.label}</span>
