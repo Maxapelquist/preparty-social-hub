@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -118,6 +118,63 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      game_participants: {
+        Row: {
+          fingers_remaining: number
+          game_id: string
+          id: string
+          is_eliminated: boolean
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          fingers_remaining?: number
+          game_id: string
+          id?: string
+          is_eliminated?: boolean
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          fingers_remaining?: number
+          game_id?: string
+          id?: string
+          is_eliminated?: boolean
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_rounds: {
+        Row: {
+          asked_by: string
+          created_at: string
+          game_id: string
+          id: string
+          participants_who_did: Json
+          question_id: string
+          round_number: number
+        }
+        Insert: {
+          asked_by: string
+          created_at?: string
+          game_id: string
+          id?: string
+          participants_who_did?: Json
+          question_id: string
+          round_number: number
+        }
+        Update: {
+          asked_by?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          participants_who_did?: Json
+          question_id?: string
+          round_number?: number
+        }
+        Relationships: []
       }
       group_conversations: {
         Row: {
@@ -239,6 +296,69 @@ export type Database = {
           is_private?: boolean | null
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      never_have_i_ever_games: {
+        Row: {
+          created_at: string
+          current_player_turn: string | null
+          current_question_id: string | null
+          host_id: string
+          id: string
+          max_fingers: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_player_turn?: string | null
+          current_question_id?: string | null
+          host_id: string
+          id?: string
+          max_fingers?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_player_turn?: string | null
+          current_question_id?: string | null
+          host_id?: string
+          id?: string
+          max_fingers?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      never_have_i_ever_questions: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_custom: boolean
+          question: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_custom?: boolean
+          question: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_custom?: boolean
+          question?: string
         }
         Relationships: []
       }
@@ -434,67 +554,67 @@ export type Database = {
         Returns: boolean
       }
       is_group_member: {
-        Args: { _user_id: string; _group_id: string }
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
       upsert_profile: {
         Args:
           | {
-              p_user_id: string
-              p_display_name: string
-              p_username: string
               p_age: number
               p_bio: string
-              p_university: string
+              p_display_name: string
               p_interests: string[]
               p_location_lat: number
               p_location_lng: number
               p_location_name: string
-            }
-          | {
-              p_user_id: string
-              p_display_name: string
-              p_username: string
-              p_age: number
-              p_bio: string
-              p_university: string
               p_occupation: string
               p_phone_number: string
+              p_university: string
+              p_user_id: string
+              p_username: string
+            }
+          | {
+              p_age: number
+              p_bio: string
+              p_display_name: string
               p_interests: string[]
               p_location_lat: number
               p_location_lng: number
               p_location_name: string
+              p_university: string
+              p_user_id: string
+              p_username: string
             }
         Returns: Json
       }
       upsert_profile_simple: {
         Args:
           | {
-              p_display_name: string
-              p_username: string
               p_age: number
               p_bio: string
-              p_university: string
-              p_occupation: string
-              p_phone_number: string
+              p_display_name: string
               p_interests: string[]
               p_location_lat: number
               p_location_lng: number
               p_location_name: string
+              p_occupation: string
+              p_phone_number: string
+              p_profile_pictures?: string[]
+              p_university: string
+              p_username: string
             }
           | {
-              p_display_name: string
-              p_username: string
               p_age: number
               p_bio: string
-              p_university: string
-              p_occupation: string
-              p_phone_number: string
+              p_display_name: string
               p_interests: string[]
               p_location_lat: number
               p_location_lng: number
               p_location_name: string
-              p_profile_pictures?: string[]
+              p_occupation: string
+              p_phone_number: string
+              p_university: string
+              p_username: string
             }
         Returns: Json
       }

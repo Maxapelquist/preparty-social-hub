@@ -7,10 +7,21 @@ import { Gamepad2, Users, Play } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { NeverHaveIEverGame } from "./NeverHaveIEverGame";
 
 interface Group {
   id: string;
   name: string;
+}
+
+interface Game {
+  id: string;
+  host_id: string;
+  title: string;
+  status: 'waiting' | 'active' | 'finished';
+  current_question_id?: string;
+  current_player_turn?: string;
+  max_fingers: number;
 }
 
 export function GamesView() {
@@ -19,6 +30,7 @@ export function GamesView() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [showGroupSelector, setShowGroupSelector] = useState(false);
+  const [activeGame, setActiveGame] = useState<Game | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -48,7 +60,7 @@ export function GamesView() {
     }
   };
 
-  const startNeverHaveIEverGame = () => {
+  const startNeverHaveIEverGame = async () => {
     if (selectedGroups.length === 0) {
       toast({
         title: "Välj grupper",
@@ -58,13 +70,62 @@ export function GamesView() {
       return;
     }
 
-    // TODO: Implementera själva spelet
-    toast({
-      title: "Spelet startar!",
-      description: `Jag har aldrig med ${selectedGroups.length} grupp(er)`,
-    });
-    setShowGroupSelector(false);
-    setSelectedGroups([]);
+    try {
+      // Create the game
+      const { data: gameData, error: gameError } = await supabase
+        .from('never_have_i_ever_games')
+        .insert({
+          host_id: user!.id,
+          title: `Jag har aldrig - ${selectedGroups.length} grupp(er)`,
+          status: 'waiting',
+          max_fingers: 5
+        })
+        .select()
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Get all members from selected groups
+      const { data: groupMembers, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id, group_id')
+        .in('group_id', selectedGroups);
+
+      if (membersError) throw membersError;
+
+      // Get unique user IDs
+      const uniqueUserIds = [...new Set(groupMembers?.map(m => m.user_id) || [])];
+
+      // Add participants to the game
+      const participants = uniqueUserIds.map(userId => ({
+        game_id: gameData.id,
+        user_id: userId,
+        fingers_remaining: 5,
+        is_eliminated: false
+      }));
+
+      const { error: participantsError } = await supabase
+        .from('game_participants')
+        .insert(participants);
+
+      if (participantsError) throw participantsError;
+
+      toast({
+        title: "Spelet startar!",
+        description: `Skapade spel med ${uniqueUserIds.length} deltagare`,
+      });
+
+      setShowGroupSelector(false);
+      setSelectedGroups([]);
+      setActiveGame(gameData as Game);
+    } catch (error) {
+      console.error('Error creating game:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte skapa spelet",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleGroupSelection = (groupId: string) => {
@@ -74,6 +135,31 @@ export function GamesView() {
         : [...prev, groupId]
     );
   };
+
+  if (activeGame) {
+    return (
+      <div className="min-h-screen pb-20 px-4 pt-8">
+        <div className="max-w-md mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
+              Jag har aldrig
+            </h1>
+            <Button
+              variant="ghost"
+              onClick={() => setActiveGame(null)}
+              className="text-sm"
+            >
+              Tillbaka
+            </Button>
+          </div>
+          <NeverHaveIEverGame 
+            game={activeGame} 
+            onGameEnd={() => setActiveGame(null)} 
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 px-4 pt-8">
