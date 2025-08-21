@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,9 @@ interface Participant {
   user_id: string;
   fingers_remaining: number;
   is_eliminated: boolean;
-  profiles: {
-    display_name: string;
-    avatar_url?: string;
-  };
+  display_name: string;
+  username: string;
+  avatar_url?: string;
 }
 
 interface Question {
@@ -94,37 +94,16 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
   }, [game.id, user?.id]);
 
   const fetchParticipants = async () => {
-    const { data, error } = await supabase
-      .from('game_participants')
-      .select(`
-        id,
-        user_id,
-        fingers_remaining,
-        is_eliminated
-      `)
-      .eq('game_id', game.id)
-      .order('joined_at');
+    const { data, error } = await supabase.rpc('get_game_participants', {
+      p_game_id: game.id
+    });
 
     if (error) {
       console.error('Error fetching participants:', error);
       return;
     }
 
-    // Fetch profiles separately
-    const userIds = data?.map(p => p.user_id) || [];
-    const { data: profilesData } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, avatar_url')
-      .in('user_id', userIds);
-
-    const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
-
-    const participantsWithProfiles = data?.map(participant => ({
-      ...participant,
-      profiles: profilesMap.get(participant.user_id) || { display_name: 'Okänd användare', avatar_url: null }
-    })) || [];
-
-    setParticipants(participantsWithProfiles);
+    setParticipants(data || []);
   };
 
   const fetchCurrentQuestion = async () => {
@@ -319,7 +298,7 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
         <Trophy size={48} className="mx-auto mb-4 text-yellow-500" />
         <h2 className="text-2xl font-bold mb-2">🎉 Vinnare! 🎉</h2>
         <p className="text-lg mb-4">
-          {winner.profiles.display_name} vann spelet!
+          {winner.display_name} vann spelet!
         </p>
         <Button onClick={onGameEnd} className="gradient-primary">
           Tillbaka till spel
@@ -421,7 +400,7 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
               <div className="flex items-center space-x-3">
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {participant.profiles.display_name}
+                    {participant.display_name}
                     {participant.user_id === game.current_player_turn && (
                       <Badge variant="secondary" className="ml-2 text-xs">
                         På tur
