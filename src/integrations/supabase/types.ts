@@ -307,6 +307,7 @@ export type Database = {
           host_id: string
           id: string
           max_fingers: number
+          party_id: string | null
           status: string
           title: string
           updated_at: string
@@ -318,6 +319,7 @@ export type Database = {
           host_id: string
           id?: string
           max_fingers?: number
+          party_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -329,11 +331,20 @@ export type Database = {
           host_id?: string
           id?: string
           max_fingers?: number
+          party_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "never_have_i_ever_games_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       never_have_i_ever_questions: {
         Row: {
@@ -545,8 +556,24 @@ export type Database = {
         Args: { user_a: string; user_b: string }
         Returns: string
       }
+      get_game_participants: {
+        Args: { p_game_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          fingers_remaining: number
+          id: string
+          is_eliminated: boolean
+          user_id: string
+          username: string
+        }[]
+      }
       is_conversation_participant: {
         Args: { _conversation_id: string }
+        Returns: boolean
+      }
+      is_game_participant: {
+        Args: { _game_id: string }
         Returns: boolean
       }
       is_group_conversation_participant: {

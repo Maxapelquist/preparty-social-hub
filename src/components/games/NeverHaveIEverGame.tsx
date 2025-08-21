@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ interface Game {
   current_question_id?: string;
   current_player_turn?: string;
   max_fingers: number;
+  party_id?: string;
 }
 
 interface Participant {
@@ -94,16 +94,19 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
   }, [game.id, user?.id]);
 
   const fetchParticipants = async () => {
-    const { data, error } = await supabase.rpc('get_game_participants', {
-      p_game_id: game.id
-    });
+    const { data, error } = await supabase
+      .rpc('get_game_participants', {
+        p_game_id: game.id
+      });
 
     if (error) {
       console.error('Error fetching participants:', error);
       return;
     }
 
-    setParticipants(data || []);
+    if (data) {
+      setParticipants(data as Participant[]);
+    }
   };
 
   const fetchCurrentQuestion = async () => {

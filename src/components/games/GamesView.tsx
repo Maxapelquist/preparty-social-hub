@@ -1,17 +1,21 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gamepad2, Users, Play } from "lucide-react";
+import { Gamepad2, Users, Play, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { NeverHaveIEverGame } from "./NeverHaveIEverGame";
 
-interface Group {
+interface Party {
   id: string;
-  name: string;
+  title: string;
+  host_id: string;
+  start_time: string;
+  current_attendees: number;
 }
 
 interface Game {
@@ -22,87 +26,107 @@ interface Game {
   current_question_id?: string;
   current_player_turn?: string;
   max_fingers: number;
+  party_id?: string;
 }
 
 export function GamesView() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [showGroupSelector, setShowGroupSelector] = useState(false);
+  const [parties, setParties] = useState<Party[]>([]);
+  const [selectedParties, setSelectedParties] = useState<string[]>([]);
+  const [showPartySelector, setShowPartySelector] = useState(false);
   const [activeGame, setActiveGame] = useState<Game | null>(null);
 
   useEffect(() => {
     if (user) {
-      fetchUserGroups();
+      fetchUserParties();
     }
   }, [user]);
 
-  const fetchUserGroups = async () => {
+  const fetchUserParties = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .select('id, name')
+      // Hämta fester där användaren är värd eller deltagare
+      const { data: hostParties, error: hostError } = await supabase
+        .from('parties')
+        .select('id, title, host_id, start_time, current_attendees')
+        .eq('host_id', user.id)
+        .eq('is_active', true);
+
+      if (hostError) throw hostError;
+
+      const { data: attendeeParties, error: attendeeError } = await supabase
+        .from('parties')
+        .select('id, title, host_id, start_time, current_attendees')
         .in('id', 
           await supabase
-            .from('group_members')
-            .select('group_id')
+            .from('party_attendees')
+            .select('party_id')
             .eq('user_id', user.id)
-            .then(res => res.data?.map(item => item.group_id) || [])
-        );
+            .then(res => res.data?.map(item => item.party_id) || [])
+        )
+        .eq('is_active', true);
 
-      if (error) throw error;
-      setGroups(data || []);
+      if (attendeeError) throw attendeeError;
+
+      // Kombinera och ta bort dubbletter
+      const allParties = [...(hostParties || []), ...(attendeeParties || [])];
+      const uniqueParties = allParties.filter((party, index, self) => 
+        index === self.findIndex(p => p.id === party.id)
+      );
+
+      setParties(uniqueParties);
     } catch (error) {
-      console.error('Error fetching groups:', error);
+      console.error('Error fetching parties:', error);
     }
   };
 
   const startNeverHaveIEverGame = async () => {
-    if (selectedGroups.length === 0) {
+    if (selectedParties.length === 0) {
       toast({
-        title: "Välj grupper",
-        description: "Du måste välja minst en grupp för att starta leken.",
+        title: "Välj fester",
+        description: "Du måste välja minst en fest för att starta leken.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Create the game
+      // För enkelhetens skull, använd bara första festen om flera är valda
+      const selectedPartyId = selectedParties[0];
+
+      // Skapa spelet kopplat till festen
       const { data: gameData, error: gameError } = await supabase
         .from('never_have_i_ever_games')
         .insert({
           host_id: user!.id,
-          title: `Jag har aldrig - ${selectedGroups.length} grupp(er)`,
+          title: `Jag har aldrig - ${parties.find(p => p.id === selectedPartyId)?.title}`,
           status: 'waiting',
-          max_fingers: 5
+          max_fingers: 5,
+          party_id: selectedPartyId
         })
         .select()
         .single();
 
       if (gameError) throw gameError;
 
-      // Get all members from selected groups
-      const { data: groupMembers, error: membersError } = await supabase
-        .from('group_members')
-        .select('user_id, group_id')
-        .in('group_id', selectedGroups);
+      // Hämta alla deltagare från festen
+      const { data: partyAttendees, error: attendeesError } = await supabase
+        .from('party_attendees')
+        .select('user_id')
+        .eq('party_id', selectedPartyId)
+        .eq('status', 'attending');
 
-      if (membersError) throw membersError;
+      if (attendeesError) throw attendeesError;
 
-      // Get unique user IDs
-      const uniqueUserIds = [...new Set(groupMembers?.map(m => m.user_id) || [])];
-
-      // Add participants to the game
-      const participants = uniqueUserIds.map(userId => ({
+      // Lägg till deltagare i spelet
+      const participants = partyAttendees?.map(attendee => ({
         game_id: gameData.id,
-        user_id: userId,
+        user_id: attendee.user_id,
         fingers_remaining: 5,
         is_eliminated: false
-      }));
+      })) || [];
 
       const { error: participantsError } = await supabase
         .from('game_participants')
@@ -112,11 +136,11 @@ export function GamesView() {
 
       toast({
         title: "Spelet startar!",
-        description: `Skapade spel med ${uniqueUserIds.length} deltagare`,
+        description: `Skapade spel med ${participants.length} deltagare`,
       });
 
-      setShowGroupSelector(false);
-      setSelectedGroups([]);
+      setShowPartySelector(false);
+      setSelectedParties([]);
       setActiveGame(gameData as Game);
     } catch (error) {
       console.error('Error creating game:', error);
@@ -128,11 +152,11 @@ export function GamesView() {
     }
   };
 
-  const toggleGroupSelection = (groupId: string) => {
-    setSelectedGroups(prev => 
-      prev.includes(groupId) 
-        ? prev.filter(id => id !== groupId)
-        : [...prev, groupId]
+  const togglePartySelection = (partyId: string) => {
+    setSelectedParties(prev => 
+      prev.includes(partyId) 
+        ? prev.filter(id => id !== partyId)
+        : [partyId] // Bara tillåt en fest i taget för enkelhetens skull
     );
   };
 
@@ -191,7 +215,7 @@ export function GamesView() {
               <span>15-30 min</span>
             </div>
 
-            <Dialog open={showGroupSelector} onOpenChange={setShowGroupSelector}>
+            <Dialog open={showPartySelector} onOpenChange={setShowPartySelector}>
               <DialogTrigger asChild>
                 <Button 
                   size="lg" 
@@ -203,39 +227,48 @@ export function GamesView() {
               </DialogTrigger>
               <DialogContent className="max-w-sm">
                 <DialogHeader>
-                  <DialogTitle>Välj grupper som ska spela</DialogTitle>
+                  <DialogTitle>Välj fest att spela med</DialogTitle>
                 </DialogHeader>
                 
                 <div className="space-y-4">
-                  {groups.length === 0 ? (
+                  {parties.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      Du är inte medlem i några grupper än. Gå till Vänner för att skapa eller gå med i grupper.
+                      Du deltar inte i några aktiva fester än. Gå till Fester för att skapa eller gå med i fester.
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {groups.map((group) => (
-                        <div key={group.id} className="flex items-center space-x-2">
+                      {parties.map((party) => (
+                        <div key={party.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={group.id}
-                            checked={selectedGroups.includes(group.id)}
-                            onCheckedChange={() => toggleGroupSelection(group.id)}
+                            id={party.id}
+                            checked={selectedParties.includes(party.id)}
+                            onCheckedChange={() => togglePartySelection(party.id)}
                           />
                           <label 
-                            htmlFor={group.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            htmlFor={party.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                           >
-                            {group.name}
+                            <div>
+                              <div className="font-semibold">{party.title}</div>
+                              <div className="text-xs text-muted-foreground flex items-center">
+                                <Calendar size={12} className="mr-1" />
+                                {new Date(party.start_time).toLocaleDateString('sv-SE')}
+                                <span className="ml-2">•</span>
+                                <Users size={12} className="ml-2 mr-1" />
+                                {party.current_attendees} deltagare
+                              </div>
+                            </div>
                           </label>
                         </div>
                       ))}
                     </div>
                   )}
                   
-                  {groups.length > 0 && (
+                  {parties.length > 0 && (
                     <div className="flex space-x-3 pt-4">
                       <Button 
                         variant="outline" 
-                        onClick={() => setShowGroupSelector(false)}
+                        onClick={() => setShowPartySelector(false)}
                         className="flex-1"
                       >
                         Avbryt
@@ -243,7 +276,7 @@ export function GamesView() {
                       <Button 
                         onClick={startNeverHaveIEverGame}
                         className="flex-1 gradient-primary"
-                        disabled={selectedGroups.length === 0}
+                        disabled={selectedParties.length === 0}
                       >
                         Starta
                       </Button>
