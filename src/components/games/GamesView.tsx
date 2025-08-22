@@ -52,7 +52,8 @@ export function GamesView() {
         .from('parties')
         .select('id, title, host_id, start_time, current_attendees')
         .eq('host_id', user.id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .gte('start_time', new Date().toISOString());
 
       if (hostError) throw hostError;
 
@@ -66,7 +67,8 @@ export function GamesView() {
             .eq('user_id', user.id)
             .then(res => res.data?.map(item => item.party_id) || [])
         )
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .gte('start_time', new Date().toISOString());
 
       if (attendeeError) throw attendeeError;
 

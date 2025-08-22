@@ -61,6 +61,7 @@ export function PartiesView() {
           profiles!fk_parties_host_id (display_name, avatar_url, profile_pictures)
         `)
         .eq('is_active', true)
+        .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true });
 
       if (error) throw error;
