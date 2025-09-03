@@ -219,6 +219,47 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
     setQuestionHistory(prev => [...prev, nextQuestion]);
   };
 
+  const handleRemoveFinger = async (participantId: string, fingerIndex: number) => {
+    if (!user) return;
+
+    const participant = participants.find(p => p.id === participantId);
+    if (!participant) return;
+
+    // Only allow host or the participant themselves to remove fingers
+    if (!isHost && participant.user_id !== user.id) return;
+
+    const newFingersRemaining = participant.fingers_remaining - 1;
+    const isEliminated = newFingersRemaining <= 0;
+
+    const { error } = await supabase
+      .from('game_participants')
+      .update({
+        fingers_remaining: newFingersRemaining,
+        is_eliminated: isEliminated
+      })
+      .eq('id', participantId);
+
+    if (error) {
+      console.error('Error updating participant:', error);
+      return;
+    }
+
+    if (isEliminated) {
+      toast({
+        title: participant.user_id === user.id ? "Du är ute!" : `${participant.display_name} är ute!`,
+        description: "Inga fingrar kvar.",
+      });
+    } else {
+      toast({
+        title: "Finger borttaget!",
+        description: `${participant.display_name} har ${newFingersRemaining} fingrar kvar`,
+      });
+    }
+
+    // Refresh participants
+    fetchParticipants();
+  };
+
   const handleAnswer = async (didIt: boolean) => {
     if (!user || !currentQuestion) return;
 
@@ -316,134 +357,169 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Game Header */}
-      <Card className="p-4 glass card-shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">{game.title}</h2>
-            <p className="text-sm text-muted-foreground">
-              {activePlayers.length} spelare kvar
-            </p>
-          </div>
-          <Badge variant="secondary">
-            Runda {questionHistory.length + 1}
-          </Badge>
-        </div>
-      </Card>
-
-      {/* Current Question */}
-      {currentQuestion && (
-        <Card className="p-6 glass card-shadow gradient-hero text-white text-center">
-          <h3 className="text-2xl font-bold mb-4">
-            {currentQuestion.question}
-          </h3>
-          <Badge variant="secondary" className="mb-4">
-            {currentQuestion.category}
-          </Badge>
-          
-          {hasIEver === null && (
-            <div className="space-y-4">
-              <p className="text-lg opacity-90">Har du gjort det här?</p>
-              <div className="flex space-x-4 justify-center">
-                <Button
-                  onClick={() => handleAnswer(true)}
-                  variant="secondary"
-                  size="lg"
-                  className="bg-red-500/20 hover:bg-red-500/30 text-white border-red-500/30"
-                >
-                  Ja, jag har gjort det
-                </Button>
-                <Button
-                  onClick={() => handleAnswer(false)}
-                  variant="secondary"
-                  size="lg"
-                  className="bg-green-500/20 hover:bg-green-500/30 text-white border-green-500/30"
-                >
-                  Nej, aldrig
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {hasIEver !== null && (
-            <div className="space-y-4">
-              <p className="text-lg">
-                {hasIEver ? "Du sänkte ett finger!" : "Du behöll dina fingrar"}
+    <div className="relative min-h-screen">
+      {/* Blurred Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-primary/20 via-background to-secondary/20 backdrop-blur-sm" />
+      
+      {/* Game Content */}
+      <div className="relative z-10 p-4 space-y-6">
+        {/* Game Header */}
+        <Card className="p-4 glass card-shadow backdrop-blur-md bg-background/80">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold">{game.title}</h2>
+              <p className="text-sm text-muted-foreground">
+                {activePlayers.length} spelare kvar
               </p>
-              {isHost && (
-                <Button
-                  onClick={startNextRound}
-                  variant="secondary"
-                  size="lg"
-                  className="bg-white/20 hover:bg-white/30 text-white"
-                >
-                  <RotateCcw size={20} className="mr-2" />
-                  Nästa fråga
-                </Button>
-              )}
             </div>
-          )}
+            <Badge variant="secondary">
+              Runda {questionHistory.length + 1}
+            </Badge>
+          </div>
         </Card>
-      )}
 
-      {/* Participants */}
-      <Card className="p-4 glass card-shadow">
-        <h3 className="font-semibold mb-4 flex items-center">
-          <Users size={20} className="mr-2" />
-          Spelare ({participants.length})
-        </h3>
-        <div className="space-y-3">
+        {/* Current Question Card */}
+        {currentQuestion && (
+          <div className="flex justify-center">
+            <Card className="w-full max-w-md aspect-[3/4] p-6 glass card-shadow backdrop-blur-md bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground shadow-2xl border-primary/20">
+              <div className="h-full flex flex-col justify-between text-center">
+                <div className="space-y-4">
+                  <Badge variant="secondary" className="bg-background/20 text-primary-foreground border-background/30">
+                    {currentQuestion.category}
+                  </Badge>
+                  <h3 className="text-xl font-bold leading-tight">
+                    {currentQuestion.question}
+                  </h3>
+                </div>
+                
+                {hasIEver === null && (
+                  <div className="space-y-6">
+                    <p className="text-lg opacity-90">Har du gjort det här?</p>
+                    <div className="space-y-3">
+                      <Button
+                        onClick={() => handleAnswer(true)}
+                        variant="secondary"
+                        size="lg"
+                        className="w-full bg-red-500/30 hover:bg-red-500/40 text-white border-red-500/40 backdrop-blur-sm"
+                      >
+                        Ja, sänk finger! 👇
+                      </Button>
+                      <Button
+                        onClick={() => handleAnswer(false)}
+                        variant="secondary"
+                        size="lg"
+                        className="w-full bg-green-500/30 hover:bg-green-500/40 text-white border-green-500/40 backdrop-blur-sm"
+                      >
+                        Nej, behåll finger! ✋
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {hasIEver !== null && (
+                  <div className="space-y-4">
+                    <p className="text-lg font-semibold">
+                      {hasIEver ? "🔥 Du sänkte ett finger!" : "✨ Du behöll dina fingrar"}
+                    </p>
+                    {isHost && (
+                      <Button
+                        onClick={startNextRound}
+                        variant="secondary"
+                        size="lg"
+                        className="w-full bg-background/20 hover:bg-background/30 text-primary-foreground backdrop-blur-sm"
+                      >
+                        <RotateCcw size={20} className="mr-2" />
+                        Nästa fråga
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Players Grid */}
+        <div className="grid grid-cols-2 gap-4">
           {participants.map((participant) => (
-            <div
+            <Card 
               key={participant.id}
-              className={`flex items-center justify-between p-3 rounded-lg border ${
+              className={`p-4 glass card-shadow backdrop-blur-md transition-all duration-200 ${
                 participant.is_eliminated
-                  ? 'opacity-50 bg-muted/50'
+                  ? 'opacity-50 bg-background/40'
                   : participant.user_id === game.current_player_turn
-                  ? 'bg-primary/10 border-primary/30'
-                  : 'bg-background/50'
+                  ? 'bg-primary/20 border-primary/40 ring-2 ring-primary/30'
+                  : 'bg-background/60 hover:bg-background/70'
               }`}
             >
-              <div className="flex items-center space-x-3">
-                <div className="flex flex-col">
-                  <span className="font-medium">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">
                     {participant.display_name}
-                    {participant.user_id === game.current_player_turn && (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        På tur
-                      </Badge>
-                    )}
-                    {participant.is_eliminated && (
-                      <Badge variant="destructive" className="ml-2 text-xs">
-                        Ute
-                      </Badge>
-                    )}
                   </span>
+                  {participant.user_id === game.current_player_turn && (
+                    <Badge variant="secondary" className="text-xs">
+                      På tur
+                    </Badge>
+                  )}
+                  {participant.is_eliminated && (
+                    <Badge variant="destructive" className="text-xs">
+                      Ute
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Clickable Fingers */}
+                <div className="space-y-2">
+                  <div className="flex justify-center space-x-1">
+                    {Array.from({ length: game.max_fingers }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (i < participant.fingers_remaining && (isHost || participant.user_id === user?.id)) {
+                            // Handle finger click to remove life
+                            handleRemoveFinger(participant.id, i);
+                          }
+                        }}
+                        className={`transition-all duration-200 ${
+                          i < participant.fingers_remaining 
+                            ? "text-primary hover:text-primary/70 hover:scale-110 cursor-pointer" 
+                            : "text-muted-foreground/30"
+                        }`}
+                        disabled={participant.is_eliminated || (i >= participant.fingers_remaining)}
+                      >
+                        <Hand
+                          size={20}
+                          fill={i < participant.fingers_remaining ? "currentColor" : "none"}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs text-muted-foreground">
+                      {participant.fingers_remaining} fingrar kvar
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {renderFingers(participant.fingers_remaining, game.max_fingers)}
-                <span className="text-sm text-muted-foreground">
-                  {participant.fingers_remaining}
-                </span>
-              </div>
-            </div>
+            </Card>
           ))}
         </div>
-      </Card>
 
-      {!currentQuestion && isHost && (
-        <Card className="p-4 glass card-shadow text-center">
-          <Button
-            onClick={startNextRound}
-            size="lg"
-            className="gradient-primary"
-          >
-            Starta första frågan
-          </Button>
-        </Card>
-      )}
+        {!currentQuestion && isHost && (
+          <div className="flex justify-center">
+            <Card className="p-6 glass card-shadow backdrop-blur-md bg-background/80 text-center">
+              <Button
+                onClick={startNextRound}
+                size="lg"
+                className="gradient-primary"
+              >
+                🚀 Starta första frågan
+              </Button>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
