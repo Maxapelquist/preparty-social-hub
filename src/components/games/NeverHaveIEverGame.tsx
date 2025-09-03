@@ -164,8 +164,12 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       return;
     }
 
+    console.log('Getting random question...');
     const nextQuestion = await getRandomQuestion();
+    console.log('Got question:', nextQuestion);
+    
     if (!nextQuestion) {
+      console.log('No question found, showing toast');
       toast({
         title: "Inga fler frågor",
         description: "Alla frågor har använts!",
@@ -174,12 +178,17 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       return;
     }
 
+    console.log('Getting active players...');
     // Get next player
     const activePlayers = participants.filter(p => !p.is_eliminated);
+    console.log('Active players:', activePlayers);
+    
     const currentPlayerIndex = activePlayers.findIndex(p => p.user_id === game.current_player_turn);
     const nextPlayerIndex = (currentPlayerIndex + 1) % activePlayers.length;
     const nextPlayer = activePlayers[nextPlayerIndex];
+    console.log('Next player:', nextPlayer);
 
+    console.log('Updating game in database...');
     // Update game
     const { error } = await supabase
       .from('never_have_i_ever_games')
