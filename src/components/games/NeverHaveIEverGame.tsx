@@ -137,11 +137,16 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
     const usedQuestionIds = rounds?.map(r => r.question_id) || [];
 
     // Get a random unused question
-    const { data: questions, error } = await supabase
+    let query = supabase
       .from('never_have_i_ever_questions')
-      .select('*')
-      .not('id', 'in', `(${usedQuestionIds.length > 0 ? usedQuestionIds.join(',') : 'null'})`)
-      .limit(50);
+      .select('*');
+
+    // Only filter out used questions if there are any
+    if (usedQuestionIds.length > 0) {
+      query = query.not('id', 'in', `(${usedQuestionIds.join(',')})`);
+    }
+
+    const { data: questions, error } = await query.limit(50);
 
     if (error || !questions || questions.length === 0) {
       console.error('Error fetching questions or no more questions available:', error);
