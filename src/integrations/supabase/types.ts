@@ -576,6 +576,10 @@ export type Database = {
         Args: { _game_id: string }
         Returns: boolean
       }
+      is_game_participant_for_policy: {
+        Args: { _game_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_group_conversation_participant: {
         Args: { _conversation_id: string }
         Returns: boolean
