@@ -158,7 +158,11 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
   };
 
   const startNextRound = async () => {
-    if (!isHost) return;
+    console.log('startNextRound called', { isHost, user: user?.id, gameHost: game.host_id });
+    if (!isHost) {
+      console.log('User is not host, returning');
+      return;
+    }
 
     const nextQuestion = await getRandomQuestion();
     if (!nextQuestion) {
@@ -509,8 +513,14 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
         {!currentQuestion && isHost && (
           <div className="flex justify-center">
             <Card className="p-6 glass card-shadow backdrop-blur-md bg-background/80 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Debug: isHost={isHost.toString()}, currentQuestion={currentQuestion ? 'exists' : 'null'}
+              </p>
               <Button
-                onClick={startNextRound}
+                onClick={() => {
+                  console.log('Button clicked!');
+                  startNextRound();
+                }}
                 size="lg"
                 className="gradient-primary"
               >
