@@ -1,0 +1,22 @@
+-- Add 20 Swedish "Jag har aldrig" questions
+INSERT INTO public.never_have_i_ever_questions (question, category, is_custom, created_by) VALUES
+('Jag har aldrig somnat på en föreläsning', 'general', false, null),
+('Jag har aldrig missat en tenta på grund av att jag sov över mig', 'general', false, null),
+('Jag har aldrig ätit nudlar till frukost', 'general', false, null),
+('Jag har aldrig glömt vart jag parkerat bilen', 'general', false, null),
+('Jag har aldrig sjungit karaoke', 'general', false, null),
+('Jag har aldrig sprungit från krogen utan att betala', 'general', false, null),
+('Jag har aldrig ljugit om min ålder', 'general', false, null),
+('Jag har aldrig kysst någon på första dejten', 'general', false, null),
+('Jag har aldrig varit naken på en strand', 'general', false, null),
+('Jag har aldrig dansat på ett bord', 'general', false, null),
+('Jag har aldrig sovit i ett tält', 'general', false, null),
+('Jag har aldrig rakat av mig allt hår', 'general', false, null),
+('Jag har aldrig varit med i en fight', 'general', false, null),
+('Jag har aldrig spelat sanning eller konsekvens', 'general', false, null),
+('Jag har aldrig varit så full att jag inte kommer ihåg kvällen', 'general', false, null),
+('Jag har aldrig fuskat på ett prov', 'general', false, null),
+('Jag har aldrig varit kär i en lärare', 'general', false, null),
+('Jag har aldrig gråtit på bio', 'general', false, null),
+('Jag har aldrig varit på nudistbad', 'general', false, null),
+('Jag har aldrig ångrat en tatuering', 'general', false, null);
