@@ -199,6 +199,7 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       })
       .eq('id', game.id);
 
+    console.log('Database update result:', { error });
     if (error) {
       console.error('Error updating game:', error);
       toast({
@@ -209,6 +210,7 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       return;
     }
 
+    console.log('Creating game round...');
     // Create game round
     const { data: roundData } = await supabase
       .from('game_rounds')
@@ -217,9 +219,11 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       .order('round_number', { ascending: false })
       .limit(1);
 
+    console.log('Round data:', roundData);
     const nextRoundNumber = (roundData?.[0]?.round_number || 0) + 1;
+    console.log('Next round number:', nextRoundNumber);
 
-    await supabase
+    const { error: roundError } = await supabase
       .from('game_rounds')
       .insert({
         game_id: game.id,
@@ -229,7 +233,14 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
         participants_who_did: []
       });
 
+    console.log('Round insert result:', { roundError });
+    if (roundError) {
+      console.error('Error creating round:', roundError);
+    }
+
+    console.log('Setting question history...');
     setQuestionHistory(prev => [...prev, nextQuestion]);
+    console.log('Function completed successfully!');
   };
 
   const handleRemoveFinger = async (participantId: string, fingerIndex: number) => {
