@@ -158,18 +158,10 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
   };
 
   const startNextRound = async () => {
-    console.log('startNextRound called', { isHost, user: user?.id, gameHost: game.host_id });
-    if (!isHost) {
-      console.log('User is not host, returning');
-      return;
-    }
+    if (!isHost) return;
 
-    console.log('Getting random question...');
     const nextQuestion = await getRandomQuestion();
-    console.log('Got question:', nextQuestion);
-    
     if (!nextQuestion) {
-      console.log('No question found, showing toast');
       toast({
         title: "Inga fler frågor",
         description: "Alla frågor har använts!",
@@ -178,17 +170,12 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       return;
     }
 
-    console.log('Getting active players...');
     // Get next player
     const activePlayers = participants.filter(p => !p.is_eliminated);
-    console.log('Active players:', activePlayers);
-    
     const currentPlayerIndex = activePlayers.findIndex(p => p.user_id === game.current_player_turn);
     const nextPlayerIndex = (currentPlayerIndex + 1) % activePlayers.length;
     const nextPlayer = activePlayers[nextPlayerIndex];
-    console.log('Next player:', nextPlayer);
 
-    console.log('Updating game in database...');
     // Update game
     const { error } = await supabase
       .from('never_have_i_ever_games')
@@ -199,7 +186,6 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       })
       .eq('id', game.id);
 
-    console.log('Database update result:', { error });
     if (error) {
       console.error('Error updating game:', error);
       toast({
@@ -210,7 +196,6 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       return;
     }
 
-    console.log('Creating game round...');
     // Create game round
     const { data: roundData } = await supabase
       .from('game_rounds')
@@ -219,9 +204,7 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
       .order('round_number', { ascending: false })
       .limit(1);
 
-    console.log('Round data:', roundData);
     const nextRoundNumber = (roundData?.[0]?.round_number || 0) + 1;
-    console.log('Next round number:', nextRoundNumber);
 
     const { error: roundError } = await supabase
       .from('game_rounds')
@@ -233,14 +216,11 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
         participants_who_did: []
       });
 
-    console.log('Round insert result:', { roundError });
     if (roundError) {
       console.error('Error creating round:', roundError);
     }
 
-    console.log('Setting question history...');
     setQuestionHistory(prev => [...prev, nextQuestion]);
-    console.log('Function completed successfully!');
   };
 
   const handleRemoveFinger = async (participantId: string, fingerIndex: number) => {
@@ -533,14 +513,8 @@ export function NeverHaveIEverGame({ game, onGameEnd }: GameProps) {
         {!currentQuestion && isHost && (
           <div className="flex justify-center">
             <Card className="p-6 glass card-shadow backdrop-blur-md bg-background/80 text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                Debug: isHost={isHost.toString()}, currentQuestion={currentQuestion ? 'exists' : 'null'}
-              </p>
               <Button
-                onClick={() => {
-                  console.log('Button clicked!');
-                  startNextRound();
-                }}
+                onClick={startNextRound}
                 size="lg"
                 className="gradient-primary"
               >

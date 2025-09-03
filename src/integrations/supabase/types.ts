@@ -552,6 +552,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_is_game_participant: {
+        Args: { game_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       generate_friendship_pair_key: {
         Args: { user_a: string; user_b: string }
         Returns: string
